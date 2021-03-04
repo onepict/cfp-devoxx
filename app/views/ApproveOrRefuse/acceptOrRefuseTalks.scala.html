@@ -3,11 +3,11 @@
 @main("Please review your approved list of talks") {
     <div class="row">
         <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3><i class="icon-bullhorn"></i> @Messages("acceptedProposals.title", Messages("longName"))</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bullhorn"></i> @Messages("acceptedProposals.title", Messages("longName"))</h3>
                 </div>
-                <div class="panel-body">
+                <div class="card-body">
 
                         @if(flash.get("error").isDefined) {
                             <div class="col-md-12">
@@ -26,16 +26,16 @@
                         }
 
 
-                            <h3><i class="icon-play-circle"></i> @Messages("ar.approved")</h3>
+                            <h3><i class="fas fa-play-circle"></i> @Messages("ar.approved")</h3>
                             @if(approvedProposals.isEmpty){
                                 @Messages("ar.noneApproved")
                             }else{
                                 <div class="panel panel-warning">
 
-                                        <div class="panel-heading">
+                                        <div class="card-header">
                                             <h3 class="panel-title">Important :</h3>
                                         </div>
-                                        <div class="panel-body">
+                                        <div class="card-body">
                                             @Messages("ar.pleaseAccept")
                                         </div>
 
@@ -43,27 +43,27 @@
                             }
                           @approvedProposals.sortBy(_.title).map{proposal=>
                             <div class="panel panel-success">
-                                <div class="panel-heading">
+                                <div class="card-header">
                                     <h3>@proposal.title</h3>
                                 </div>
-                                <div class="panel-body">
+                                <div class="card-body">
                                     <table class="table table-bordered">
                                         <tbody>
                                             <tr>
                                                 <th>@Messages("ar.proposalId")</th>
-                                                <td><span class="label label-info">@proposal.id</span></td>
+                                                <td><span class="badge badge-info">@proposal.id</span></td>
                                             </tr>
                                             <tr>
                                                 <th>@Messages("ar.proposalType")</th>
-                                                <td><span class="label label-primary">@Messages(proposal.talkType.label)</span></td>
+                                                <td><span class="badge badge-primary">@Messages(proposal.talkType.label)</span></td>
                                             </tr>
                                             <tr>
                                                 <th>@Messages("ar.currentStatus")</th>
-                                                <td><span class="label label-default">@Messages(proposal.state.code)</span></td>
+                                                <td><span class="badge badge-secondary">@Messages(proposal.state.code)</span></td>
                                             </tr>
                                             <tr>
                                                 <th>&nbsp;</th>
-                                                <td><a href="@routes.CallForPaper.showCommentForProposal(proposal.id)" class="btn  btn-sm btn-primary" target="new"><i class="icon-question-sign"></i> @Messages("showProposal.comment.ar")</a></td>
+                                                <td><a href="@routes.CallForPaper.showCommentForProposal(proposal.id)" class="btn  btn-sm btn-primary" target="new"><i class="fas fa-question-circle"></i> @Messages("showProposal.comment.ar")</a></td>
                                             </tr>
                                         </tbody>
 
@@ -85,7 +85,7 @@
                                             }
                                             @if(proposal.state==ProposalState.BACKUP){
                                                 <td>
-                                                <p>This is a <span class="label label-warning">BACKUP</span> talk. We will notify you if it is approved at a later time.</p>
+                                                <p>This is a <span class="badge badge-warning">BACKUP</span> talk. We will notify you if it is approved at a later time.</p>
                                                 <p>However you can decline if you don't want to keep this talk as a backup.</p>
                                                 </td>
                                                 <td>
@@ -94,14 +94,14 @@
                                             }
 
                                             @if(proposal.state==ProposalState.APPROVED) {
-                                                <td colspan="2"><button name="dec" value="decline" class="btn btn-sm btn-danger"><i class="icon-warning-sign"></i> @Messages("ar.IDecline")</button> </td>
+                                                <td colspan="2"><button name="dec" value="decline" class="btn btn-sm btn-danger"><i class="fas fa-exclamation-triangle"></i> @Messages("ar.IDecline")</button> </td>
                                             }
                                             @if(proposal.state==ProposalState.ACCEPTED) {
                                                 <td><small>Warning: this talk has been accepted. Please contact the CFP team before you decline</small><br>
-                                                <button name="dec" value="decline" class="btn btn-sm btn-danger"><i class="icon-warning-sign"></i> @Messages("ar.IDecline")</button> </td>
+                                                <button name="dec" value="decline" class="btn btn-sm btn-danger"><i class="fas fa-exclamation-triangle"></i> @Messages("ar.IDecline")</button> </td>
                                             }
                                             @if(proposal.state==ProposalState.BACKUP) {
-                                                <td><button name="dec" value="decline" class="btn btn-sm btn-danger"><i class="icon-warning-sign"></i> @Messages("ar.IDecline")</button></td>
+                                                <td><button name="dec" value="decline" class="btn btn-sm btn-danger"><i class="fas fa-exclamation-triangle"></i> @Messages("ar.IDecline")</button></td>
                                             }
                                             @if(proposal.state==ProposalState.DECLINED) {
                                                 <td colspan="2"><button name="dec" value="" disabled class="btn btn-sm btn-danger"> Declined </button> </td>
@@ -122,15 +122,15 @@
 
                         @if(rejectedProposals.nonEmpty){
                         <div class="col-md-12">
-                              <h3><i class="icon-stop"></i> @Messages("ar.rejected")</h3>
+                              <h3><i class="fas fa-stop"></i> @Messages("ar.rejected")</h3>
                           @rejectedProposals.map{proposal=>
                             <div class="panel panel-danger">
-                                <div class="panel-heading">
+                                <div class="card-header">
                                     <h3>@proposal.title</h3>
                                 </div>
-                                <div class="panel-body">
-                                    <span class="label label-info">@proposal.id</span><br>
-                                    <span class="label label-primary">@Messages(proposal.talkType.id)</span>
+                                <div class="card-body">
+                                    <span class="badge badge-info">@proposal.id</span><br>
+                                    <span class="badge badge-primary">@Messages(proposal.talkType.id)</span>
                                 </div>
                             </div>
                           }

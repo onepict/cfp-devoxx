@@ -6,7 +6,7 @@
 
 <div class="row">
     <div class="col-lg-offset-4 col-md-4">
-        <h2><i class="icon-thumbs-up-alt"></i> CFP Admin</h2>
+        <h2><i class="fas fa-thumbs-up"></i> CFP Admin</h2>
     </div>
     <div class="clearfix"></div>
 
@@ -23,12 +23,14 @@
     }
 
     <div class="col-md-12">
-        <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="card">
+        <div class="card-header">
             <h3>All speakers</h3>
-            <span class="label label-info">@speakers.size users</span>
+            <span class="badge badge-info">@speakers.size users</span><br>
+            <a href="@routes.CFPAdmin.allSpeakersWithApprovedTalks(false)">Show all</a> -
+            <a href="@routes.CFPAdmin.allSpeakersWithApprovedTalks(true)">Filter Rejected and Declined</a>
         </div>
-        <div class="panel-body">
+        <div class="card-body">
 
             @if(speakers.nonEmpty){
             <table id="speakersTable" class="table table-bordered table-strippted">
@@ -39,8 +41,8 @@
                         <th>Company</th>
                         <th>Email</th>
                         <th>Nb Appr</th>
+                        <th>Nb Acc</th>
                         <th>Submitted Talks</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,29 +61,16 @@
                             <small>@speaker.email</small>
                         </td>
                         <td>@proposals.values.count(proposal => ApprovedProposal.isApproved(proposal.id, proposal.talkType.id))</td>
+                        <td>@proposals.values.count(proposal => ApprovedProposal.isAccepted(proposal.id, proposal.talkType.id))</td>
                         <td>
                         @proposals.values.map { proposal: Proposal =>
-                            @if(ApprovedProposal.isApproved(proposal.id, proposal.talkType.id)) {
-                                <span class="label label-approved">Approved</span>
-                            } else {
-                                @if(ApprovedProposal.isRefused(proposal.id, proposal.talkType.id)) {
-                                    <span class="label label-refused">Refused</span>
-                                } else {
-                                    <span class="label label-default">?</span>
-                                }
-                            }
-                        <strong>@Messages(proposal.talkType.simpleLabel)</strong>
+                            <span class="badge badge-@proposal.state.code">@proposal.state.code</span>
+                            <strong>@Messages(proposal.talkType.simpleLabel)</strong>
                             &nbsp;
-                        <a href="@routes.CFPAdmin.openForReview(proposal.id)" title="@proposal.title" target="_blank">@proposal.title</a>
+                            <a href="@routes.CFPAdmin.openForReview(proposal.id)" title="@proposal.title" target="_blank">@proposal.title</a>
                             <br/>
                         }
                         </td>
-                        <td>
-                            <a href="@routes.CFPAdmin.newOrEditSpeaker(Option(speaker.uuid))" class="btn btn-sm btn-primary">@Messages("sp.editSpeaker")</a>
-                            <a href="@routes.Backoffice.authenticateAs(speaker.uuid)" class="btn btn-sm btn-warning" ><i class="icon-lock"></i>
-                                @Messages("sp.authenticateAs")</a>
-                        </td>
-
                     </tr>
                 }
                 </tbody>
@@ -108,7 +97,7 @@ $(document).ready(function() {
             {"type": "string"},
             {"type": "string"},
             {"type": "num"},
-            {"orderable": false, "type": "string"},
+            {"type": "num"},
             {"orderable": false, "type": "string"}
         ]
     });

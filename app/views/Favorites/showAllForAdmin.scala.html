@@ -3,7 +3,7 @@
 @main("All Faved talks") {
     <div class="row">
         <div class="col-lg-offset-4 col-md-4">
-            <h2><i class="icon-magnet"></i> Backoffice</h2>
+            <h2><i class="fas fa-magnet"></i> Backoffice</h2>
         </div>
         <div class="clearfix"></div>
 
@@ -20,12 +20,12 @@
         }
 
         <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
+            <div class="card">
+                <div class="card-header">
                     <h3>All talks faved</h3>
                 </div>
-                <div class="panel-body">
-                    <h4>List of talks faved by visitor on <a href="/2018/index.html">the Program page</a> </h4>
+                <div class="card-body">
+                    <h4>List of talks faved by visitor on <a href="/2019/index.html">the Program page</a> </h4>
                     @all.map{case(proposal,vote)=>
 <p>@vote @if(vote == 1){ star } else { stars }
 for @Messages(proposal.talkType.id) <strong>@proposal.title</strong> by @proposal.allSpeakers.map(s=>s.cleanName).mkString(", ")</p>

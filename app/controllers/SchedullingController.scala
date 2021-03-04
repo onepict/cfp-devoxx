@@ -27,7 +27,7 @@ import library.{NotifyMobileApps, SaveSlots, ZapActor}
 import models._
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.i18n.Messages
-import play.api.libs.json.{JsNumber, JsString, Json}
+import play.api.libs.json.{JsBoolean, JsNumber, JsString, JsValue, Json}
 import play.api.mvc.Action
 
 /**
@@ -38,9 +38,9 @@ import play.api.mvc.Action
 object SchedullingController extends SecureCFPController {
   def slots(confType: String) = Action {
     implicit request =>
-      import Slot.slotFormat
+      import Slot.slotWithRoomFormat
 
-      val jsSlots = Json.toJson(Slot.byType(ProposalType.parse(confType)))
+      val jsSlots = Json.toJson(Slot.byType(ProposalType.parse(confType)).map(_.toSlotWithRoom))
       Ok(Json.stringify(Json.toJson(Map("allSlots" -> jsSlots)))).as("application/json")
   }
 
@@ -84,17 +84,18 @@ object SchedullingController extends SecureCFPController {
 
   def saveSlots(confType: String) = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      import Slot.slotWithRoomFormat
 
       request.body.asJson.map {
         json =>
-          val newSlots = json.as[List[Slot]]
+          val newSlots = json.as[List[SlotWithRoom]]
           val saveSlotsWithSpeakerUUIDs = newSlots.map {
-            slot: Slot =>
+            slot: SlotWithRoom =>
               slot.proposal match {
                 case Some(proposal) =>
                   // Transform back speaker name to speaker UUID when we store the slots
-                  slot.copy(proposal = Proposal.findById(proposal.id))
-                case _ => slot
+                  slot.copy(proposal = Proposal.findById(proposal.id)).toRawSlot()
+                case _ => slot.toRawSlot()
               }
           }
 
@@ -110,18 +111,154 @@ object SchedullingController extends SecureCFPController {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
       import ScheduleConfiguration.scheduleSavedFormat
 
-      val scheduledSlotsKey = ScheduleConfiguration.allScheduledConfigurationWithLastModified()
+      val scheduledSlots = ScheduleConfiguration.allScheduledConfigurationWithLastModified().map {
+        case (key, dateAsDouble) =>
+          val savedSchedule = Json.parse(key).as[ScheduleSaved]
+          (savedSchedule, dateAsDouble)
+      }
+
+      val deletableSlotIds = Slot.keepDeletableSlotIdsFrom(scheduledSlots.map(_._1.id))
       val json = Json.toJson(Map("scheduledConfigurations" -> Json.toJson(
-        scheduledSlotsKey.map {
-          case (key, dateAsDouble) =>
-            val scheduledSaved = Json.parse(key).as[ScheduleSaved]
-            Map("key" -> Json.toJson(scheduledSaved),
-              "date" -> Json.toJson(new DateTime(dateAsDouble.toLong * 1000).toDateTime(DateTimeZone.forID("Europe/Brussels")))
+        scheduledSlots.map {
+          case (savedSchedule, dateAsDouble) =>
+            Map(
+              "key" -> Json.toJson(savedSchedule),
+              "date" -> Json.toJson(new DateTime(dateAsDouble.toLong * 1000).toDateTime(ConferenceDescriptor.current().timezone)),
+              "deletable" -> JsBoolean(deletableSlotIds.contains(savedSchedule.id))
             )
         })
       )
       )
       Ok(Json.stringify(json)).as("application/json")
+  }
+
+  def allProgramSchedules() = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      import ScheduleConfiguration.scheduleSavedFormat
+
+      val programSchedules = ProgramSchedule.allProgramSchedulesForCurrentEvent();
+      val scheduleConfigurationMapByUUID = ScheduleConfiguration.allScheduledConfigurationWithLastModified()
+        .map {
+          case(scheduleSavedStr, dateAsDouble) =>
+            val scheduleSaved = Json.parse(scheduleSavedStr).as[ScheduleSaved]
+            (scheduleSaved.id, Map(
+              "id" -> JsString(scheduleSaved.id),
+              "confType" -> JsString(scheduleSaved.confType),
+              "createdBy" -> JsString(scheduleSaved.createdBy),
+              "latestModification" -> JsNumber(dateAsDouble.toLong * 1000)
+            ))
+        }.toMap
+
+      val json = Json.toJson(
+        Map(
+          "programSchedules" -> Json.toJson(
+            programSchedules.map { programSchedule =>
+              Map(
+                "id" -> JsString(programSchedule.id),
+                "name" -> JsString(programSchedule.name),
+                "isEditable" -> JsBoolean(programSchedule.isEditable),
+                "favoritesActivated" -> JsBoolean(programSchedule.favoritesActivated),
+                "showSchedule" -> JsBoolean(programSchedule.showSchedule),
+                "showRooms" -> JsBoolean(programSchedule.showRooms),
+                "isTheOnePublished" -> JsBoolean(programSchedule.isTheOnePublished),
+                "lastModifiedByName" -> JsString(programSchedule.lastModifiedByName),
+                "lastModified" -> Json.toJson(programSchedule.lastModified),
+                "specificScheduleCSSSnippet" -> Json.toJson(programSchedule.specificScheduleCSSSnippet.getOrElse("")),
+                "scheduleConfigurations" -> Json.toJson(programSchedule.scheduleConfigurations.map {
+                  case (proposalType, scheduleConfigurationId) => (proposalType.id) -> JsString(scheduleConfigurationId)
+                })
+              )
+            }
+          ),
+          "savedConfigurations" -> Json.toJson(scheduleConfigurationMapByUUID.values),
+          "slottableProposalTypes" -> Json.toJson(ConferenceDescriptor.ConferenceProposalTypes.slottableTypes.map { t => Map(
+            "id" -> t.id,
+            "label" -> Messages(t.simpleLabel)
+          )})
+        )
+      )
+      Ok(Json.stringify(json)).as("application/json")
+  }
+
+  def createAndPublishEmptyProgramSchedule() = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+
+      ProgramSchedule.createAndPublishEmptyProgramSchedule(request.webuser);
+
+      Ok("{\"status\":\"success\"}").as("application/json")
+  }
+
+  def createProgramSchedule() = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      import ProgramSchedule.persistedProgramScheduleFormat
+
+      request.body.asJson.map {
+        json =>
+          val programSchedule = json.as[PersistedProgramSchedule]
+
+          val persistedProgramSchedule = ProgramSchedule.createProgramSchedule(programSchedule, request.webuser)
+
+          Ok(Json.toJson(persistedProgramSchedule)).as("application/json")
+      }.getOrElse {
+        BadRequest("{\"status\":\"expecting json data\"}").as("application/json")
+      }
+  }
+
+  def updateProgramSchedule(uuid: String) = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      import ProgramSchedule.persistedProgramScheduleFormat
+
+      ProgramSchedule.findById(uuid) match {
+        case None => NotFound
+        case Some(dbProgramSchedule) => {
+          request.body.asJson.map {
+            json =>
+              val programSchedule = json.as[PersistedProgramSchedule]
+
+              val persistedProgramSchedule = ProgramSchedule.updateProgramSchedule(uuid, programSchedule, Some(request.webuser))
+
+              Ok(Json.toJson(persistedProgramSchedule)).as("application/json")
+          }.getOrElse {
+            BadRequest("{\"status\":\"expecting json data\"}").as("application/json")
+          }
+        }
+      }
+  }
+
+  def deleteProgramSchedule(uuid: String) = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      val mayTargetProgramScheduleBePublished = for(
+        dbProgramSchedule <- ProgramSchedule.findById(uuid);
+        publishedSchedule <- ProgramSchedule.publishedProgramSchedule()
+      ) yield {
+        dbProgramSchedule.id == publishedSchedule.id
+      }
+
+      mayTargetProgramScheduleBePublished match {
+        case None => NotFound
+        case Some(true) => NotFound
+        case Some(false) => {
+          ProgramSchedule.deleteProgramSchedule(uuid)
+          Ok("{\"status\":\"success\"}").as("application/json")
+        }
+      }
+  }
+
+  def publishProgramSchedule(uuid: String) = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      import ProgramSchedule.persistedProgramScheduleFormat
+
+      ProgramSchedule.findById(uuid) match {
+        case None => NotFound
+        case Some(dbProgramSchedule) => {
+          ProgramSchedule.publishProgramSchedule(uuid)
+
+          // Notify the mobile apps via Gluon that a new schedule has been published
+          ZapActor.actor ! NotifyMobileApps("refresh", Some(true))
+
+          Ok("{\"status\":\"success\"}").as("application/json")
+        }
+      }
   }
 
   def loadScheduledConfiguration(id: String) = SecuredAction(IsMemberOf("admin")) {
@@ -175,34 +312,21 @@ object SchedullingController extends SecureCFPController {
 
   def deleteScheduleConfiguration(id: String) = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
-      ScheduleConfiguration.delete(id)
-      Ok("{\"status\":\"deleted\"}").as("application/json")
+      Slot.keepDeletableSlotIdsFrom(List(id)).contains(id) match {
+        case true => {
+          ScheduleConfiguration.delete(id)
+          Ok("{\"status\":\"deleted\"}").as("application/json")
+        }
+        case false => NotFound
+      }
   }
 
-  def publishScheduleConfiguration() = SecuredAction(IsMemberOf("admin")) {
+  // TODO: This is only a temporary endpoint
+  // Remove it once migration occured
+  def migratePrograms() = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      import ProgramSchedule.persistedProgramScheduleFormat
 
-      request.body.asJson.map {
-        json =>
-          val id = json.\("id").as[String]
-          val confType = json.\("confType").as[String]
-
-          ScheduleConfiguration.publishConf(id, confType)
-
-          // Notify the mobile apps via Gluon that a new schedule has been published
-          ZapActor.actor ! NotifyMobileApps("refresh", Some(true))
-
-          Ok("{\"status\":\"success\"}").as("application/json")
-      }.getOrElse {
-        BadRequest("{\"status\":\"expecting json data\"}").as("application/json")
-      }
-  }
-
-  def getPublishedSchedule(confType: String, day: Option[String]) = Action {
-    implicit request =>
-      ScheduleConfiguration.getPublishedSchedule(confType) match {
-        case Some(id) => Redirect(routes.Publisher.showAgendaByConfType(confType, Option(id), day.getOrElse("wednesday")))
-        case None => Redirect(routes.Publisher.homePublisher()).flashing("success" -> Messages("not.published"))
-      }
+      Ok(Json.toJson(OldPersistedProgramSchedule.migrateProgramSchedules())).as(JSON)
   }
 }

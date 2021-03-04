@@ -3,14 +3,16 @@
         approved:List[Slot],
         acceptedThenChangedToOtherState:List[Slot],
         speakers:List[Speaker],
-        conflicts:Set[(Speaker, Map[org.joda.time.DateTime, Iterable[Slot]])]
+        conflicts:Set[(Speaker, Map[org.joda.time.DateTime, Iterable[Slot]])],
+        programSchedules: List[ProgramSchedule],
+        programScheduleId: Option[String]
 )(implicit lang: Lang, flash: Flash, req:RequestHeader)
 
 @main("CFP Admin sanity check") {
 
 <div class="row">
     <div class="col-lg-offset-4 col-md-4">
-        <h2><i class="icon-thumbs-up-alt"></i> CFP Admin</h2>
+        <h2><i class="fas fa-thumbs-up"></i> CFP Admin</h2>
     </div>
     <div class="clearfix"></div>
 
@@ -27,16 +29,22 @@
     }
 
     <div class="col-md-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3><i class="icon-medkit"></i> Sanity check</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-medkit"></i> Sanity check</h3>
                 <p>This screen loads all Scheduled configuration. For each configuration, it checks the current proposal state.
                    If a speaker declines a talk after it has been published, you will have to update the Schedule configuration with the AngularJS app.
                     We have to do so, since we can schedule "approved" talks and not only accepted ones.
                 </p>
             </div>
+            <div class="card-header">
+                Program schedule :
+                @programSchedules.map { programSchedule =>
+                    <a href="@routes.Backoffice.sanityCheckSchedule(Some(programSchedule.id))" class="btn @if((programScheduleId == None && programSchedule.isTheOnePublished) || (programScheduleId == Some(programSchedule.id)) ) { btn-success } else { btn-primary } btn-sm">@programSchedule.name @if(programSchedule.isTheOnePublished){ (Published) }</a>
+                }
+            </div>
 
-            <div class="panel-body">
+            <div class="card-body">
                 <h3>List of talks with status "Approved"</h3>
                 @if(approved.nonEmpty) {
                     <p>You need to check and to confirm "Accepted" talks, remove "Declined" talks since the agenda has been published.
@@ -45,20 +53,20 @@
 
                     @approved.map{slot=>
                         <div class="panel panel-warning">
-                            <div class="panel-heading">
+                            <div class="card-header">
                                 <h4>@slot.name @slot.id</h4>
                                 <p>@slot.proposal.get.id - @slot.proposal.get.title</p>
                                 <p>Presented by @slot.proposal.get.allSpeakers.map(_.cleanName).mkString(", ")</p>
                             </div>
 
-                            <div class="panel-body">
+                            <div class="card-body">
                                 @defining(Proposal.findProposalState(slot.proposal.get.id).get){currentState:ProposalState=>
                                     <p>Proposal state on the published Agenda: <span class="alert alert-danger">@Messages(slot.proposal.get.state.code)</span></p>
                                     <p>Current state on Redis: @Messages(currentState.code)</p>
 
                                     @if(currentState.code=="accepted"){
                                         <div class="alert">
-                                        <a href="@routes.Backoffice.fixToAccepted(slot.id, slot.proposal.get.id, slot.proposal.get.talkType.id)" class="btn btn-small btn-success"><i class="icon-info-sign"></i> Set the status to 'accepted'</a>
+                                        <a href="@routes.Backoffice.fixToAccepted(slot.id, slot.proposal.get.id, slot.proposal.get.talkType.id, programScheduleId)" class="btn btn-small btn-success"><i class="fas fa-info-circle"></i> Set the status to 'accepted'</a>
                                         <br>
                                         @slot.proposal.get.allSpeakers.filter(s=>Speaker.needsToAccept(s.uuid)).map{s:Speaker=>
                                             @s.cleanName needs to accept "Terms&Conditions" : <a href="@routes.CFPAdmin.newOrEditSpeaker(Some(s.uuid))">Edit speaker and accept T&C</a>
@@ -68,7 +76,7 @@
 
                                     @if(currentState.code=="declined"){
                                         <div class="alert alert-danger">
-                                            <i class="icon-warning-sign"></i> Update @slot.id slot on AngularJS App and remove this talk - <a href="/assets/angular/index.html#/saved">Open in AngularJS</a>
+                                            <i class="fas fa-exclamation-triangle"></i> Update @slot.id slot on AngularJS App and remove this talk - <a href="/assets/angular/index.html#/saved">Open in AngularJS</a>
                                         </div>
                                     }
                                 }
@@ -90,13 +98,13 @@
 
                     @declined.map{slot=>
                         <div class="panel panel-info">
-                            <div class="panel-heading">
+                            <div class="card-header">
                                 <h4 class="panel-header"> @slot.name @slot.id</h4>
                                 <p><a href="@routes.CFPAdmin.openForReview(slot.proposal.get.id)">@slot.proposal.get.id - @slot.proposal.get.title</a></p>
                                 <p>Presented by @slot.proposal.get.allSpeakers.map(_.cleanName).mkString(", ")</p>
                             </div>
-                            <div class="panel-body">
-                                <i class="icon-info-sign"></i> Update @slot.id slot on AngularJS App and remove this talk - <a href="/assets/angular/index.html#/saved">Open in AngularJS</a>
+                            <div class="card-body">
+                                <i class="fas fa-info-circle"></i> Update @slot.id slot on AngularJS App and remove this talk - <a href="/assets/angular/index.html#/saved">Open in AngularJS</a>
                             </div>
                         </div>
                     }
@@ -114,14 +122,14 @@
 
                     @acceptedThenChangedToOtherState.map{slot=>
                         <div class="panel panel-info">
-                            <div class="panel-heading">
+                            <div class="card-header">
                         <h4 class="panel-header"> @slot.name @slot.id</h4>
                         <p><a href="@routes.CFPAdmin.openForReview(slot.proposal.get.id)">@slot.proposal.get.id - @slot.proposal.get.title</a></p>
                         <p>Presented by @slot.proposal.get.allSpeakers.map(_.cleanName).mkString(", ")</p>
                                 </div>
-                        <div class="panel-body">
+                        <div class="card-body">
                             <div class="alert alert-info">
-                                <i class="icon-info-sign"></i> Update @slot.id slot on AngularJS App and remove this talk - <a href="/assets/angular/index.html#/saved">Open in AngularJS</a>
+                                <i class="fas fa-info-circle"></i> Update @slot.id slot on AngularJS App and remove this talk - <a href="/assets/angular/index.html#/saved">Open in AngularJS</a>
                             </div>
                         </div>
                     }
@@ -154,23 +162,23 @@
     @if(conflicts.nonEmpty) {
         <div class="col-md-12">
             <div class="panel panel-danger">
-                <div class="panel-heading">
+                <div class="card-header">
                     <h2>Conflicts</h2>
                 </div>
             </div>
             <p>The following talks are scheduled on the same day, same time slot, for the same speaker : </p>
             @conflicts.map{case(speaker,timeSlots)=>
-                <div class="panel panel-default">
-                    <div class="panel-heading">
+                <div class="card">
+                    <div class="card-header">
                         <h4>@speaker.cleanName</h4>
                     </div>
-                    <div class="panel-body">
+                    <div class="card-body">
 
                 @timeSlots.map{case(time:org.joda.time.DateTime,slots)=>
-                    <b>Conflict on @time.toDateTime(DateTimeZone.forID("Europe/Brussels")).toString("EEEE HH:mm")</b><br>
+                    <b>Conflict on @time.toDateTime(ConferenceDescriptor.current().timezone).toString("EEEE HH:mm")</b><br>
                     @slots.map{slot:Slot=>
                         @slot.proposal.map {p:Proposal=>
-                          <i class="icon-warning-sign"></i> <b>@p.id</b> @Messages(p.talkType.id): @p.title<br>
+                          <i class="fas fa-exclamation-triangle"></i> <b>@p.id</b> @Messages(p.talkType.id): @p.title<br>
                         }
                     }
                 }

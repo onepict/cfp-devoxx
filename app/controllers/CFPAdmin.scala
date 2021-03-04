@@ -1,7 +1,5 @@
 package controllers
 
-import java.io.{File, FileOutputStream, OutputStreamWriter, PrintWriter}
-
 import library.search.ElasticSearch
 import library.{SendMessageInternal, SendMessageToSpeaker, _}
 import models.Review._
@@ -14,6 +12,8 @@ import play.api.data.validation.Constraints._
 import play.api.i18n.Messages
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{Action, AnyContent}
+
+import java.io.{File, FileOutputStream, OutputStreamWriter, PrintWriter}
 
 /**
   * The backoffice controller for the CFP technical committee.
@@ -117,18 +117,22 @@ object CFPAdmin extends SecureCFPController {
 
             // The next proposal I should review
             val allNotReviewed = Review.allProposalsNotReviewed(uuid)
+            val (sameTrackAndFormats, otherTracksOrFormats) = allNotReviewed.partition(p => p.track.id == proposal.track.id && p.talkType.id == proposal.talkType.id)
             val (sameTracks, otherTracks) = allNotReviewed.partition(_.track.id == proposal.track.id)
             val (sameTalkType, otherTalksType) = allNotReviewed.partition(_.talkType.id == proposal.talkType.id)
 
+            // Note: not appending otherTracksOrFormats here, as we want to show the button in the
+            // template only if there are some remaining talks to be reviewed for same track & talkType
+            val nextToBeReviewedSameTrackAndFormat = (sameTrackAndFormats.sortBy(_.track.id)).headOption
             val nextToBeReviewedSameTrack = (sameTracks.sortBy(_.talkType.id) ++ otherTracks).headOption
             val nextToBeReviewedSameFormat = (sameTalkType.sortBy(_.track.id) ++ otherTalksType).headOption
 
             // The Reviewer leaderboard, remove if the user did not vote for any talks and sort by number of talks reviewed
-            val bestReviewers: List[(String, Int, Int)] = Review.allReviewersAndStats().filterNot(br => br._3 < 1).sortBy(_._3)
+            val bestReviewers: List[(String, Int, Int, Int, BigDecimal)] = Review.allReviewersAndStats().filterNot(br => br._3 < 1).sortBy(_._3)
 
 
             // Find the current authenticated user (with uuid), the user that is before, and the one that is after
-            val listOfReviewers: List[List[(String, Int, Int)]] = bestReviewers
+            val listOfReviewers: List[List[(String, Int, Int, Int, BigDecimal)]] = bestReviewers
               .sliding(3) // This iterate the list 3 by 3
               .filter(subList => subList.exists(_._1 == uuid)) // we are only intersted if the element 1 is our uuid.
               .toList // else since it's an iterator... we won't be able to apply methods
@@ -154,7 +158,7 @@ object CFPAdmin extends SecureCFPController {
             // Because this list might be empty we use headOption
             val maybeTwoFirstTuples =  listOfReviewers.take(2)
 
-            val meAndMyFollowers: Option[List[(String, Int, Int)]] = maybeTwoFirstTuples.size match {
+            val meAndMyFollowers: Option[List[(String, Int, Int, Int, BigDecimal)]] = maybeTwoFirstTuples.size match {
               case 1 => maybeTwoFirstTuples.headOption
               case other => maybeTwoFirstTuples.drop(1).headOption
             }
@@ -163,9 +167,9 @@ object CFPAdmin extends SecureCFPController {
             if (ConferenceDescriptor.isGoldenTicketActive) {
               val averageScoreGT = ReviewByGoldenTicket.averageScore(proposalId)
               val countVotesCastGT: Option[Long] = Option(ReviewByGoldenTicket.totalVoteCastFor(proposalId))
-              Ok(views.html.CFPAdmin.showVotesForProposal(uuid, proposal, currentAverageScore, countVotesCast, countVotes, allVotes, nextToBeReviewedSameTrack, nextToBeReviewedSameFormat, averageScoreGT, countVotesCastGT, meAndMyFollowers))
+              Ok(views.html.CFPAdmin.showVotesForProposal(uuid, proposal, currentAverageScore, countVotesCast, countVotes, allVotes, nextToBeReviewedSameTrackAndFormat, nextToBeReviewedSameTrack, nextToBeReviewedSameFormat, averageScoreGT, countVotesCastGT, meAndMyFollowers))
             } else {
-              Ok(views.html.CFPAdmin.showVotesForProposal(uuid, proposal, currentAverageScore, countVotesCast, countVotes, allVotes, nextToBeReviewedSameTrack, nextToBeReviewedSameFormat, 0, None, meAndMyFollowers))
+              Ok(views.html.CFPAdmin.showVotesForProposal(uuid, proposal, currentAverageScore, countVotesCast, countVotes, allVotes, nextToBeReviewedSameTrackAndFormat, nextToBeReviewedSameTrack, nextToBeReviewedSameFormat, 0, None, meAndMyFollowers))
             }
           case None => NotFound("Proposal not found").as("text/html")
         }
@@ -252,31 +256,36 @@ object CFPAdmin extends SecureCFPController {
       }
   }
 
-  def allMyVotes(talkType: String) = SecuredAction(IsMemberOf("cfp")) {
+  def allMyVotes(talkType: String, selectedTrack: Option[String]) = SecuredAction(IsMemberOf("cfp")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
 
       ConferenceDescriptor.ConferenceProposalTypes.ALL.find(_.id == talkType).map {
         pType =>
           val uuid = request.webuser.uuid
-          val allMyVotes = Review.allVotesFromUser(uuid)
-          val allProposalIDs = allMyVotes.map(_._1)
-          val allProposalsForProposalType = Proposal.loadAndParseProposals(allProposalIDs).filter(_._2.talkType == pType)
-          val allProposalsIdsProposalType = allProposalsForProposalType.keySet
+          val allMyVotesIncludingAbstentions = Review.allVotesFromUser(uuid)
+          val allProposalIDsWhereIVoted = allMyVotesIncludingAbstentions.map(_._1)
+          val allProposalsMatchingCriteriaWhereIVoted = Proposal.loadAndParseProposals(allProposalIDsWhereIVoted)
+            .filter(p => p._2.talkType == pType && selectedTrack.map(p._2.track.id == _).getOrElse(true))
+          val allProposalsIdsMatchingCriteriaWhereIVoted = allProposalsMatchingCriteriaWhereIVoted.keySet
 
-          val allMyVotesForSpecificProposalType = allMyVotes.filter {
-            proposalIdAndVotes => allProposalsIdsProposalType.contains(proposalIdAndVotes._1)
+          val allMyVotesIncludingAbstentionsMatchingCriteria = allMyVotesIncludingAbstentions.filter {
+            proposalIdAndVotes => allProposalsIdsMatchingCriteriaWhereIVoted.contains(proposalIdAndVotes._1)
           }
+          val sortedAllMyVotesIncludingAbstentionsMatchingCriteria = allMyVotesIncludingAbstentionsMatchingCriteria.toList.sortBy(_._2).reverse
+          val sortedAllMyVotesExcludingAbstentionsMatchingCriteria = sortedAllMyVotesIncludingAbstentionsMatchingCriteria.filter(_._2 != 0)
 
-          val allScoresForProposals: Map[String, Double] = allProposalsIdsProposalType.map {
+          val allScoresForProposals: Map[String, Double] = allProposalsIdsMatchingCriteriaWhereIVoted.map {
             pid: String => (pid, Review.averageScore(pid))
           }.toMap
 
-          val sortedListOfProposals = allMyVotesForSpecificProposalType.toList.sortBy {
-            case (proposalID, maybeScore) =>
-              maybeScore.getOrElse(0.toDouble)
-          }.reverse
+          val proposalsNotReviewedByType = Review.allProposalsNotReviewed(uuid).groupBy(_.talkType.id)
+          val proposalNotReviewedCountByType = proposalsNotReviewedByType.mapValues(_.size)
+          val proposalsNotReviewedForCurrentType = proposalsNotReviewedByType.get(pType.id).getOrElse(List())
+          val proposalNotReviewedCountForCurrentTypeByTrack = proposalsNotReviewedForCurrentType.groupBy(_.track.id).mapValues(_.size)
+          val proposalsMatchingCriteriaNotReviewed = proposalsNotReviewedForCurrentType.filter(p => selectedTrack.map(p.track.id == _).getOrElse(true))
+          val firstProposalNotReviewedAndMatchingCriteria = proposalsMatchingCriteriaNotReviewed.headOption
 
-          Ok(views.html.CFPAdmin.allMyVotes(sortedListOfProposals, allProposalsForProposalType, talkType, allScoresForProposals))
+          Ok(views.html.CFPAdmin.allMyVotes(sortedAllMyVotesIncludingAbstentionsMatchingCriteria, sortedAllMyVotesExcludingAbstentionsMatchingCriteria, allProposalsMatchingCriteriaWhereIVoted, talkType, selectedTrack, allScoresForProposals, proposalNotReviewedCountByType, proposalNotReviewedCountForCurrentTypeByTrack, firstProposalNotReviewedAndMatchingCriteria))
       }.getOrElse {
         BadRequest("Invalid proposal type")
       }
@@ -287,10 +296,10 @@ object CFPAdmin extends SecureCFPController {
 
       import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-      ElasticSearch.doAdvancedSearch("speakers,proposals", q, p).map {
+      ElasticSearch.doAdvancedSearch(ElasticSearch.indexNames, q, p).map {
         case r if r.isSuccess =>
           val json = Json.parse(r.get)
-          val total = (json \ "hits" \ "total").as[Int]
+          val total = (json \ "hits" \ "total" \ "value").as[Int] // Upgraded to ES 7.1
           val hitContents = (json \ "hits" \ "hits").as[List[JsObject]]
 
           val results = hitContents.sortBy {
@@ -308,12 +317,12 @@ object CFPAdmin extends SecureCFPController {
                   val talkType = Messages((source \ "talkType" \ "id").as[String])
                   val code = (source \ "state" \ "code").as[String]
                   val mainSpeaker = (source \ "mainSpeaker").as[String]
-                  s"<p class='searchProposalResult'><i class='icon-folder-open'></i> Proposal <a href='${routes.CFPAdmin.openForReview(id)}'>$title</a> <strong>$code</strong> - by $mainSpeaker - $talkType</p>"
+                  s"<p class='searchProposalResult'><i class='fas fa-folder-open'></i> Proposal $id <a href='${routes.CFPAdmin.openForReview(id)}'>$title</a> <strong>$code</strong> - by $mainSpeaker - $talkType</p>"
                 case "speakers" =>
                   val uuid = (source \ "uuid").as[String]
                   val name = (source \ "name").as[String]
                   val firstName = (source \ "firstName").as[String]
-                  s"<p class='searchSpeakerResult'><i class='icon-user'></i> Speaker <a href='${routes.CFPAdmin.showSpeakerAndTalks(uuid)}'>$firstName $name</a></p>"
+                  s"<p class='searchSpeakerResult'><i class='fas fa-user'></i> Speaker <a href='${routes.CFPAdmin.showSpeakerAndTalks(uuid)}'>$firstName $name</a></p>"
                 case _ => "Unknown format " + index
               }
           }
@@ -490,7 +499,7 @@ object CFPAdmin extends SecureCFPController {
                 writer.print("\", ")
                 writer.print("\"" + proposalUrl + "\", ")
                 writer.print(s" scheduled on ${slot.day.capitalize} ${slot.room.name} ")
-                writer.print(s"from ${slot.from.toDateTime(DateTimeZone.forID("Europe/Paris")).toString("HH:mm")} to ${slot.to.toDateTime(DateTimeZone.forID("Europe/Paris")).toString("HH:mm")}")
+                writer.print(s"from ${slot.from.toDateTime(ConferenceDescriptor.current().timezone).toString("HH:mm")} to ${slot.to.toDateTime(DateTimeZone.forID("Europe/Paris")).toString("HH:mm")}")
               }.getOrElse {
                 writer.print("\"")
                 writer.print(p.title.replaceAll(",", " "))
@@ -567,13 +576,18 @@ object CFPAdmin extends SecureCFPController {
       Ok(views.html.Backoffice.invalidDevoxxians(removeNoEmails.values.flatten.toList))
   }
 
-
-  def allSpeakersWithApprovedTalks() = SecuredAction(IsMemberOf("cfp")) {
+  def allSpeakersWithApprovedTalks(filterDeclinedRejected: Boolean) = SecuredAction(IsMemberOf("cfp")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
       val allSpeakers = ApprovedProposal.allApprovedSpeakers()
-      val toReturn = allSpeakers.map {
-        s =>
-          (s, Proposal.allSubmittedProposalsByAuthor(s.uuid))
+
+      val toReturn = if (filterDeclinedRejected) {
+        allSpeakers.map(s => (s, Proposal
+          .allNonArchivedProposalsByAuthor(s.uuid)
+          .filterNot(t => t._2.state == ProposalState.REJECTED || t._2.state == ProposalState.DECLINED)
+        )
+        ).filterNot(s => s._2.isEmpty)
+      } else {
+        allSpeakers.map(s => (s, Proposal.allNonArchivedProposalsByAuthor(s.uuid)))
       }
       Ok(views.html.CFPAdmin.allSpeakers(toReturn))
   }
@@ -625,8 +639,8 @@ object CFPAdmin extends SecureCFPController {
       val proposals: List[(Speaker, Iterable[Proposal])] = speakers.toList.map {
         speaker =>
           val allProposalsForThisSpeaker = Proposal.allApprovedAndAcceptedProposalsByAuthor(speaker.uuid).values
-          val onIfFirstOrSecondSpeaker = allProposalsForThisSpeaker.filter(p => p.mainSpeaker == speaker.uuid || p.secondarySpeaker == Some(speaker.uuid))
-            .filter(p => ProposalConfiguration.doesProposalTypeGiveSpeakerFreeEntrance(p.talkType))
+          val onIfFirstOrSecondSpeaker = allProposalsForThisSpeaker.filter(p => p.mainSpeaker == speaker.uuid || p.secondarySpeaker.contains(speaker.uuid))
+            .filter(p => ConferenceDescriptor.ConferenceProposalConfigurations.doesProposalTypeGiveSpeakerFreeEntrance(p.talkType))
           (speaker, onIfFirstOrSecondSpeaker)
       }.filter(_._2.nonEmpty).map {
         case (speaker, zeProposals) =>

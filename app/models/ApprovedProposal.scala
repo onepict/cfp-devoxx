@@ -44,7 +44,6 @@ object ApprovedProposal {
     , ("quick.label", ConferenceProposalConfigurations.QUICK.slotsCount)
     , ("bof.label", ConferenceProposalConfigurations.BOF.slotsCount)
     , ("key.label", ConferenceProposalConfigurations.KEY.slotsCount)
-    , ("ignite.label", ConferenceProposalConfigurations.IGNITE.slotsCount)
     , ("other.label", ConferenceProposalConfigurations.OTHER.slotsCount)
   )
 
@@ -127,6 +126,10 @@ object ApprovedProposal {
       client.sismember(s"Approved:$talkType", proposalId)
   }
 
+  def isAccepted(proposalId: String, talkType: String): Boolean = {
+    Proposal.findById(proposalId).exists(_.state == ProposalState.ACCEPTED)
+  }
+
   // This is only for Attic controller, to fix an old bug on data (bug #159)
   // The bug was that a conference is approved, but then the speaker changes the
   // format to quickie, then the Approved:conf collection is not updated correctly
@@ -146,9 +149,9 @@ object ApprovedProposal {
   }
 
   def remainingSlots(talkType: String): Long = {
-    var propType = ProposalConfiguration.parse(talkType)
-    if (propType == ProposalConfiguration.UNKNOWN) {
-      ProposalConfiguration.totalSlotsCount - countApproved("all")
+    var propType = ConferenceDescriptor.ConferenceProposalConfigurations.parse(talkType)
+    if (propType == ConferenceDescriptor.ConferenceProposalConfigurations.UNKNOWN) {
+      ConferenceDescriptor.ConferenceProposalConfigurations.totalSlotsCount - countApproved("all")
     } else {
       propType.slotsCount - countApproved(talkType)
     }
@@ -255,11 +258,12 @@ object ApprovedProposal {
   def allApprovedByTalkType(talkType: String): List[Proposal] = Redis.pool.withClient {
     implicit client =>
 
-      // Include Approved talks but exclude Archived, Declined and Rejected sessions
+      // Include Approved talks but exclude Archived, Declined, Rejected and Cancelled sessions
       val allProposalIDs = client.smembers("Approved:" + talkType)
         .diff(client.smembers(s"Proposals:ByState:${ProposalState.ARCHIVED.code}"))
         .diff(client.smembers(s"Proposals:ByState:${ProposalState.DECLINED.code}"))
         .diff(client.smembers(s"Proposals:ByState:${ProposalState.REJECTED.code}"))
+        .diff(client.smembers(s"Proposals:ByState:${ProposalState.CANCELLED.code}"))
 
       val allProposalWithVotes = Proposal.loadAndParseProposals(allProposalIDs)
       allProposalWithVotes.values.toList

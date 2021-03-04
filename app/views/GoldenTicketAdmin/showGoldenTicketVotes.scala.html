@@ -9,13 +9,13 @@
 
 <div class="row">
     <div class="col-md-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h1><i class="icon-bar-chart"></i> Golden ticket votes</h1>
+        <div class="card">
+            <div class="card-header">
+                <h1><i class="fas fa-chart-bar"></i> Golden ticket votes</h1>
                 @allVotes.size elements
             </div>
 
-            <div class="panel-body">
+            <div class="card-body">
 
                 <div class="col-md-12">
                     <table id="allProposals" class="table table-bordered table-hover table-condensed">
@@ -67,9 +67,9 @@
                                     <td>
                                         @proposal.allSpeakers.map { s: Speaker =>
                                             @if(models.Invitation.isInvited(s.uuid)){
-                                              <span class="label label-warning"><i class="icon-glass"></i> @s.cleanName</span>
+                                              <span class="badge badge-warning"><i class="fas fa-glass-martini"></i> @s.cleanName</span>
                                             }else{
-                                                <span class="label label-default">@s.cleanName</span>
+                                                <span class="badge badge-secondary">@s.cleanName</span>
                                             }
                                         }
                                     </td>

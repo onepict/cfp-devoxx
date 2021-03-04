@@ -8,7 +8,7 @@
 
     <div class="row">
         <div class="col-lg-offset-4 col-md-4">
-            <h2><i class="icon-thumbs-up-alt"></i> CFP Admin</h2>
+            <h2><i class="fas fa-thumbs-up"></i> CFP Admin</h2>
         </div>
         <div class="clearfix"></div>
 
@@ -24,11 +24,11 @@
             </div>
         }
         <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
+            <div class="card">
+                <div class="card-header">
                     <h3>All Golden Tickets @tickets.size</h3>
                 </div>
-                <div class="panel-body">
+                <div class="card-body">
                       <a href="@routes.GoldenTicketAdminController.newGoldenTicket()" class="btn btn-sm btn-primary">Create a new golden ticket</a>
                 @if(tickets.nonEmpty) {
                     <table id="tickets" class="table table-bordered table-hover table-condensed">
@@ -55,12 +55,12 @@
                                     <td>@gd.ticketType</td>
                                     <td>
                                         <form action="@routes.GoldenTicketAdminController.sendEmail(gd.id)" method="POST">
-                                            <button type="submit" value="unactivate" class="btn btn-primary btn-small"><i class="icon-envelope"></i></button>
+                                            <button type="submit" value="unactivate" class="btn btn-primary btn-small"><i class="fas fa-envelope"></i></button>
                                         </form>
                                     </td>
                                     <td>
                                         <form action="@routes.GoldenTicketAdminController.unactivateGoldenTicket(gd.id)" method="POST">
-                                            <button type="submit" value="unactivate" class="btn btn-warning btn-small"><i class="icon-trash"></i></button>
+                                            <button type="submit" value="unactivate" class="btn btn-warning btn-small"><i class="fas fa-trash"></i></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -84,7 +84,8 @@
         <div class="col-lg-12">
             <h3>Votes par utilisateur</h3>
             @ReviewByGoldenTicket.countVotesForAllUsers().map { uuidAndVotes =>
-              @uuidAndVotes._2 @Webuser.findByUUID(uuidAndVotes._1).map(_.cleanName)<br>
+              @uuidAndVotes._2 @Webuser.findByUUID(uuidAndVotes._1).map {user =>
+                @user.cleanName &lt;@user.email&gt;<br>}
             }
         </div>
     </div>

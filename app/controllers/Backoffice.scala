@@ -1,7 +1,8 @@
 package controllers
 
-import library.search.{DoIndexProposal, _}
 import library._
+import library.search.{DoIndexProposal, _}
+import models.ConferenceDescriptor.ConferenceProposalTypes
 import models.{Tag, _}
 import org.joda.time.{DateTime, Instant}
 import play.api.Play
@@ -65,19 +66,22 @@ object Backoffice extends SecureCFPController {
       }
   }
 
-  def allProposals(proposalId: Option[String]) = SecuredAction(IsMemberOf("admin")) {
+  def allProposals(proposalId: Option[String], filterByStatus: Option[String]) = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
 
-      proposalId match {
-        case Some(id) =>
+      (proposalId, filterByStatus) match {
+        case (Some(id), _) =>
           val proposal = Proposal.findById(id)
           proposal match {
             case None => NotFound("Proposal not found")
-            case Some(pr) => Ok(views.html.Backoffice.allProposals(List(pr)))
+            case Some(pr) => Ok(views.html.Backoffice.allProposals(List(pr), None))
           }
-        case None =>
+        case (None, None) =>
           val proposals = Proposal.allProposals().sortBy(_.state.code)
-          Ok(views.html.Backoffice.allProposals(proposals))
+          Ok(views.html.Backoffice.allProposals(proposals, filterByStatus))
+        case (None, Some(filter)) =>
+          val proposals = Proposal.allFromProposalState(ProposalState.parse(filter)).sortBy(_.state.code)
+          Ok(views.html.Backoffice.allProposals(proposals, filterByStatus))
       }
 
 
@@ -102,7 +106,7 @@ object Backoffice extends SecureCFPController {
       Ok(views.html.Backoffice.homeBackoffice())
   }
 
-  def changeProposalState(proposalId: String, state: String) = SecuredAction(IsMemberOf("admin")) {
+  def changeProposalState(proposalId: String, state: String, filterByStatus: Option[String]) = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
       Proposal.changeProposalState(request.webuser.uuid, proposalId, ProposalState.parse(state))
       if (state == ProposalState.ACCEPTED.code) {
@@ -119,7 +123,11 @@ object Backoffice extends SecureCFPController {
             ElasticSearchActor.masterActor ! DoIndexProposal(proposal.copy(state = ProposalState.DECLINED))
         }
       }
-      Redirect(routes.Backoffice.allProposals()).flashing("success" -> ("Changed state to " + state))
+      filterByStatus match {
+        case None => Redirect(routes.Backoffice.allProposals()).flashing("success" -> (s"Changed state for proposal [$proposalId ] to $state"))
+        case Some(proposalState) => Redirect(routes.Backoffice.allProposals(None, filterByStatus)).flashing("success" -> (s"Changed state for proposal [$proposalId ] to $state"))
+      }
+
   }
 
   val formSecu = Form("secu" -> nonEmptyText())
@@ -147,8 +155,8 @@ object Backoffice extends SecureCFPController {
   def doIndexElasticSearch() = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
       ElasticSearchActor.masterActor ! DoIndexAllSpeakers
-      ElasticSearchActor.masterActor ! DoIndexAllProposals
-      ElasticSearchActor.masterActor ! DoIndexAllAccepted
+      ElasticSearchActor.masterActor ! DoIndexAllProposals // This is for internal CFP team
+      ElasticSearchActor.masterActor ! DoIndexAllAccepted // This is for the public program
       ElasticSearchActor.masterActor ! DoIndexAllHitViews
       ElasticSearchActor.masterActor ! DoIndexSchedule
       Redirect(routes.Backoffice.homeBackoffice()).flashing("success" -> "Elastic search actor started...")
@@ -207,9 +215,9 @@ object Backoffice extends SecureCFPController {
       }
   }
 
-  def sanityCheckSchedule() = SecuredAction(IsMemberOf("admin")) {
+  def sanityCheckSchedule(programScheduleId: Option[String]) = SecuredAction(IsMemberOf("admin")) {
     implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
-      val allPublishedProposals = ScheduleConfiguration.loadAllPublishedSlots().filter(_.proposal.isDefined)
+      val allPublishedProposals = ScheduleConfiguration.loadAllPublishedSlots(programScheduleId).filter(_.proposal.isDefined)
       val publishedTalksExceptBOF = allPublishedProposals.filterNot(_.proposal.get.talkType == ConferenceDescriptor.ConferenceProposalTypes.BOF)
 
       val declined = publishedTalksExceptBOF.filter(_.proposal.get.state == ProposalState.DECLINED)
@@ -254,7 +262,10 @@ object Backoffice extends SecureCFPController {
           approved,
           acceptedThenChangedToOtherState,
           allSpeakers,
-          allWithConflicts.filter(_._2.nonEmpty)
+          allWithConflicts.filter(_._2.nonEmpty),
+          ProgramSchedule.allProgramSchedulesForCurrentEvent(),
+          programScheduleId
+
         )
       )
 
@@ -272,9 +283,9 @@ object Backoffice extends SecureCFPController {
       val futureMessages: Future[Any] = ZapActor.actor ? CheckSchedules
 
       futureMessages.map {
-        case results:List[ProposalAndRelatedError]=>
+        case results: List[ProposalAndRelatedError] =>
           Ok(views.html.Backoffice.refreshSchedules(results))
-        case _=>
+        case _ =>
           play.Logger.error("refreshSchedules error with Akka")
           InternalServerError(s"Unable to refresh schedule, exception was raised from Akka Actor")
       }
@@ -299,23 +310,25 @@ object Backoffice extends SecureCFPController {
       }
   }
 
-  def fixToAccepted(slotId: String, proposalId: String, talkType: String) = SecuredAction(IsMemberOf("admin")) {
+  def fixToAccepted(slotId: String, proposalId: String, talkType: String, programScheduleId: Option[String] = None) = SecuredAction(IsMemberOf("admin")) {
     implicit request =>
       val maybeUpdated = for (
-        scheduleId <- ScheduleConfiguration.getPublishedSchedule(talkType);
+        scheduleId <- ScheduleConfiguration.getPublishedScheduleSlotConfigurationId(talkType, programScheduleId);
         scheduleConf <- ScheduleConfiguration.loadScheduledConfiguration(scheduleId);
         slot <- scheduleConf.slots.find(_.id == slotId).filter(_.proposal.isDefined).filter(_.proposal.get.id == proposalId)
       ) yield {
         val updatedProposal = slot.proposal.get.copy(state = ProposalState.ACCEPTED)
         val updatedSlot = slot.copy(proposal = Some(updatedProposal))
         val newListOfSlots = updatedSlot :: scheduleConf.slots.filterNot(_.id == slotId)
-        newListOfSlots
+        val newID = ScheduleConfiguration.persist(talkType, newListOfSlots, request.webuser)
+
+        // Automatically updating published program behind the scenes
+        ProgramSchedule.updatePublishedScheduleConfiguration(scheduleId, newID, ConferenceProposalTypes.valueOf(talkType), None)
+        newID
       }
 
       maybeUpdated.map {
-        newListOfSlots =>
-          val newID = ScheduleConfiguration.persist(talkType, newListOfSlots, request.webuser)
-          ScheduleConfiguration.publishConf(newID, talkType)
+        newID =>
           Redirect(routes.Backoffice.sanityCheckSchedule()).flashing("success" -> s"Created a new scheduleConfiguration ($newID) and published a new agenda.")
       }.getOrElse {
         NotFound("Unable to update Schedule configuration, did not find the slot, the proposal or the scheduleConfiguraiton")
@@ -478,7 +491,7 @@ object Backoffice extends SecureCFPController {
   }
 
 
-  def pushNotifications(message:String) = SecuredAction(IsMemberOf("admin")) {
+  def pushNotifications(message: String) = SecuredAction(IsMemberOf("admin")) {
     implicit request =>
 
       request.body.asJson.map {
@@ -545,6 +558,28 @@ object Backoffice extends SecureCFPController {
 
       val result = Speaker.fixAndRestoreOldWebuser(speakerUUID)
       Ok("Result: " + result)
+  }
+
+  def fixRedisDataConsistency() = SecuredAction(IsMemberOf("admin")) {
+    implicit request: SecuredRequest[play.api.mvc.AnyContent] =>
+      var summary = new StringBuilder
+
+      Proposal.allProposals().foreach(proposal => {
+        val removedStates = Proposal.ensureProposaleHasState(proposal.id, proposal.state)
+        if (removedStates != 0) {
+          summary ++= s"Removed ${removedStates} invalid states for proposal ${proposal.id} (valid state: ${proposal.state.code})\n"
+        }
+        val removedTypes = Proposal.ensureProposaleHasType(proposal.id, proposal.talkType)
+        if (removedTypes != 0) {
+          summary ++= s"Removed ${removedTypes} invalid types for proposal ${proposal.id} (valid type: ${proposal.talkType.id})\n"
+        }
+        val removeTracks = Proposal.ensureProposaleHasTrack(proposal.id, proposal.track.id)
+        if (removeTracks != 0) {
+          summary ++= s"Removed ${removeTracks} invalid tracks for proposal ${proposal.id} (valid track: ${proposal.track.id})\n"
+        }
+      })
+
+      Ok(summary.toString)
   }
 
 }

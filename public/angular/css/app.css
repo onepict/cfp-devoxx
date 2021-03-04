@@ -48,11 +48,13 @@ body {
     box-shadow: 2px 2px #bbb;
 }
 
-.label-en{
+.badge-en{
     background-color: darkblue;
+    color: white;
 }
-.label-fr{
+.badge-fr{
     background-color: #87840b;
+    color: white;
 }
 
 .slot {
@@ -171,4 +173,7 @@ body {
     padding: 1px 5px;
     font-size: 10px;
     line-height: 0.5;
+}
+tr.published-program {
+    background-color: #4abbc4 !important;
 }

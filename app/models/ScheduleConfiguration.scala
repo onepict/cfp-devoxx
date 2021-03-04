@@ -24,6 +24,7 @@
 package models
 
 import library.Redis
+import models.ConferenceDescriptor.ConferenceProposalTypes
 import play.api.libs.json.Json
 import org.apache.commons.lang3.RandomStringUtils
 
@@ -107,26 +108,40 @@ object ScheduleConfiguration {
             play.Logger.of("models.ScheduledConfiguration").warn("Unable to reload a SlotConfiguration due to JSON error")
             play.Logger.of("models.ScheduledConfiguration").warn(s"Got error : ${library.ZapJson.showError(errors)} ")
             None
-          }
-            , someConf => Option(someConf)
-          )
+          }, scheduleConfig => {
+            Option(scheduleConfig.copy(
+              // Replacing every slots/timeslots to convert them to current conf timezone, as we're generally
+              // using local time everywhere in the code, whereas after JSON deserialization, it's UTC-based
+              slots = scheduleConfig.slots.map(slot => {
+                slot.copy(
+                  from = slot.from.toDateTime(ConferenceDescriptor.current().timezone),
+                  to = slot.to.toDateTime(ConferenceDescriptor.current().timezone)
+                )
+              }),
+              timeSlots = scheduleConfig.timeSlots.map(timeSlot => {
+                timeSlot.copy(
+                  start = timeSlot.start.toDateTime(ConferenceDescriptor.current().timezone),
+                  end = timeSlot.end.toDateTime(ConferenceDescriptor.current().timezone)
+                )
+              })
+            ))
+          })
       }
   }
 
-  def publishConf(id: String, confType: String) = Redis.pool.withClient {
-    implicit client => client.hset("Published:Schedule", confType, id)
+  def getPublishedScheduleSlotConfigurationId(confType: String, secretPublishKey: Option[String] = None): Option[String] = Redis.pool.withClient {
+    implicit client =>
+      val maybeProgramSchedule = ProgramSchedule.findByPublishKey(secretPublishKey)
+      maybeProgramSchedule.flatMap { programSchedule =>
+        programSchedule.scheduleConfigurations.get(ConferenceProposalTypes.valueOf(confType))
+      }
   }
 
-  def getPublishedSchedule(confType: String): Option[String] = Redis.pool.withClient {
-    implicit client => client.hget("Published:Schedule", confType)
-  }
-
-  def getPublishedScheduleByDay(day: String): List[Slot] = {
+  def getPublishedScheduleByDay(day: String, secretPublishKey: Option[String] = None): List[Slot] = {
 
     def extractSlot(allSlots: List[Slot], day: String) = {
-      val configured = loadSlots().filter(_.day == day)
-      val configuredIDs = configured.map(_.id)
-      val filtered = allSlots.filterNot(s => configuredIDs.contains(s.id))
+      val configured = loadSlots(secretPublishKey).filter(_.day == day)
+      val filtered = allSlots.filterNot(s => s.isAllocatableSlot)
       configured ++ filtered
     }
 
@@ -149,14 +164,14 @@ object ScheduleConfiguration {
     listOfSlots.sortBy(_.from.getMillis)
   }
 
-  def loadSlots(): List[Slot] = {
+  def loadSlots(secretPublishKey: Option[String]): List[Slot] = {
     ConferenceDescriptor.ConferenceProposalTypes.ALL.flatMap {
-      t: ProposalType => loadSlotsForConfType(t.id)
+      t: ProposalType => loadSlotsForConfType(t.id, secretPublishKey)
     }
   }
 
-  def loadSlotsForConfType(confType: String): List[Slot] = {
-    getPublishedSchedule(confType).flatMap {
+  def loadSlotsForConfType(confType: String, secretPublishKey: Option[String] = None): List[Slot] = {
+    getPublishedScheduleSlotConfigurationId(confType, secretPublishKey).flatMap {
       id: String =>
         loadScheduledConfiguration(id).map {
           scheduledConf => scheduledConf.slots
@@ -169,17 +184,17 @@ object ScheduleConfiguration {
     loadSlotsForConfType(confType).filter(_.proposal.isDefined).find(_.proposal.get.id == proposalId)
   }
 
-  def loadAllConfigurations() = {
+  def loadAllConfigurations(secretPublishKey: Option[String] = None) = {
     val allConfs = for (confType <- ProposalType.allIDsOnly;
-                        slotId <- ScheduleConfiguration.getPublishedSchedule(confType);
+                        slotId <- ScheduleConfiguration.getPublishedScheduleSlotConfigurationId(confType, secretPublishKey);
                         configuration <- ScheduleConfiguration.loadScheduledConfiguration(slotId)
     ) yield configuration
 
     allConfs
   }
 
-  def loadAllPublishedSlots():List[Slot]={
-    loadAllConfigurations().flatMap {
+  def loadAllPublishedSlots(secretPublishKey: Option[String] = None):List[Slot]={
+    loadAllConfigurations(secretPublishKey).flatMap {
       sc => sc.slots
     }
   }
@@ -187,7 +202,7 @@ object ScheduleConfiguration {
   def loadNextTalks() = {
     val allAgendas = ScheduleConfiguration.loadAllConfigurations()
     val slots = allAgendas.flatMap(_.slots)
-    Option(slots.filter(_.from.isAfter(new DateTime().toDateTime(DateTimeZone.forID("Europe/Paris")))).sortBy(_.from.toDate.getTime).take(10))
+    Option(slots.filter(_.from.isAfter(new DateTime().toDateTime(ConferenceDescriptor.current().timezone))).sortBy(_.from.toDate.getTime).take(10))
   }
 
   def loadRandomTalks() = {

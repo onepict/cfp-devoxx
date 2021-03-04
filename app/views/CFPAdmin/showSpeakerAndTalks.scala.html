@@ -3,11 +3,11 @@
 @main("Speaker " + speaker.cleanName) {
 <div class="row">
     <div class="col-md-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3><i class="icon-user"></i> @speaker.cleanName</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-user"></i> @speaker.cleanName</h3>
             </div>
-            <div class="panel-body">
+            <div class="card-body">
         @if(flash.get("error").isDefined){
           <div class="alert alert-danger alert-dismissable">
               <strong>Error :</strong>
@@ -21,8 +21,8 @@
         }
 @if(SecureCFPController.hasAccessToCFP(req)){
     <a href="@routes.CFPAdmin.newOrEditSpeaker(Option(speaker.uuid))" class="btn btn-sm btn-primary">@Messages("sp.editSpeaker")</a>
-    <a href="@routes.Backoffice.authenticateAs(speaker.uuid)" class="btn btn-sm btn-warning" ><i class="icon-lock"></i> @Messages("sp.authenticateAs")</a>
-    <a href="@routes.Backoffice.authenticateAndCreateTalk(speaker.uuid)" class="btn btn-sm btn-warning" ><i class="icon-lock"></i> @Messages("sp.authenticateAndCreate")</a>
+    <a href="@routes.Backoffice.authenticateAs(speaker.uuid)" class="btn btn-sm btn-warning" ><i class="fas fa-lock"></i> @Messages("sp.authenticateAs")</a>
+    <a href="@routes.Backoffice.authenticateAndCreateTalk(speaker.uuid)" class="btn btn-sm btn-warning" ><i class="fas fa-lock"></i> @Messages("sp.authenticateAndCreate")</a>
 }
 @if(SecureCFPController.hasAccessToAdmin(req)){
     @tags.checkInvited(speaker.uuid)
@@ -57,26 +57,26 @@
                         </tr>
                         @if(SecureCFPController.hasAccessToCFPAdmin(req)) {
                             <tr>
-                                <td><i class="icon-mail-reply"></i> Email </td>
+                                <td><i class="fas fa-at"></i> Email </td>
                                 <td>@speaker.email</td>
                             </tr>
                             <tr>
-                                <td><i class="icon-apple"></i> UUID </td>
+                                <td><i class="fas fa-apple"></i> UUID </td>
                                 <td>@speaker.uuid</td>
                             </tr>
                         }
 
                         <tr>
-                            <td><i class="icon-adjust"></i> Bio</td><td>@Html(speaker.bioAsHtml)</td>
+                            <td><i class="fas fa-adjust"></i> Bio</td><td>@Html(speaker.bioAsHtml)</td>
                         </tr>
                         <tr>
-                            <td><i class="icon-tasks"></i> @Messages("qualifications.label")</td><td>@speaker.qualifications</td>
+                            <td><i class="fas fa-tasks"></i> @Messages("qualifications.label")</td><td>@speaker.qualifications</td>
                         </tr>
                         <tr>
-                            <td><i class="icon-flag"></i> Lang</td><td>@speaker.lang.getOrElse("")</td>
+                            <td><i class="fas fa-flag"></i> Lang</td><td>@speaker.lang.getOrElse("")</td>
                         </tr>
                         <tr>
-                            <td><i class="icon-bullhorn"></i> Blog</td>
+                            <td><i class="fas fa-bullhorn"></i> Blog</td>
                             <td>
                             @speaker.blog.map{b=>
                             <a href="@b" target="new">@b</a>
@@ -84,11 +84,11 @@
                             </td>
                         </tr>
                         <tr>
-                            <td><i class="icon-building"></i> Company</td>
+                            <td><i class="fas fa-building"></i> Company</td>
                             <td>@speaker.company.getOrElse("")</td>
                         </tr>
                         <tr>
-                            <td><i class="icon-twitter"></i> Twitter</td>
+                            <td><i class="fab fa-twitter"></i> Twitter</td>
                             <td>@speaker.twitter.map{t=>
                             <a href="http://www.twitter.com/@t" target="new">@t</a>
                             }.getOrElse("")</td>
@@ -100,11 +100,11 @@
     </div>
 @if(SecureCFPController.hasAccessToCFPAdmin(req)){
     <div class="col-md-12">
-        <div class="panel-heading">
-            <h3><i class="icon-bullhorn"></i> Talks</h3>
+        <div class="card-header">
+            <h3><i class="fas fa-bullhorn"></i> Talks</h3>
         </div>
-        <div class="panel panel-default">
-            <div class="panel-body">
+        <div class="card">
+            <div class="card-body">
                 @tags.renderProposals(proposals, currentUser)
             </div>
         </div>
@@ -112,37 +112,37 @@
 
     <div class="col-md-12">
         <div class="panel">
-            <Div class="panel-heading">
-                <H3><i class="icon-ambulance"></i> Safety check </H3>
+            <Div class="card-header">
+                <H3><i class="fas fa-ambulance"></i> Safety check </H3>
         </div>
-            <div class="panel-body">
+            <div class="card-body">
                 <p>Some Webuser have been corrupted by invalid UUID. Consequence is that a Speaker cannot reload its profile, and will create a new one.</p>
 
                 <p>UUID should be = @Webuser.generateUUID(speaker.email)</p>
                 <p>Speaker find by UUID ? @Speaker.findByUUID(speaker.uuid).isDefined</p>
-                <p>Webuser find by UUID works ?  @if(Webuser.findByUUID(speaker.uuid).isDefined){ <label class="label label-success">YES</label> } else { <label class="label label-danger">No</label> }</p>
-                <p>Webuser find by Email ?  @if(Webuser.findByEmail(speaker.email).isDefined){ <label class="label label-success">YES</label> } else { <label class="label label-danger">No</label> }</p>
+                <p>Webuser find by UUID works ?  @if(Webuser.findByUUID(speaker.uuid).isDefined){ <label class="badge badge-success">YES</label> } else { <label class="badge badge-danger">No</label> }</p>
+                <p>Webuser find by Email ?  @if(Webuser.findByEmail(speaker.email).isDefined){ <label class="badge badge-success">YES</label> } else { <label class="badge badge-danger">No</label> }</p>
                 <p>Webuser ID and Speaker ID are identicals ?
                     @if(Webuser.findByEmail(speaker.email).exists(w => w.uuid == speaker.uuid)){
-                        <label class="label label-success">YES</label> that's normal.
+                        <label class="badge badge-success">YES</label> that's normal.
                     }else{
-                         <label class="label label-danger">No</label>
+                         <label class="badge badge-danger">No</label>
                         <div class="panel panel-danger">
-                            <div class="panel-body">Webuser and Speaker have different UUID => this will generate bugs and duplicate profiles.<br>
+                            <div class="card-body">Webuser and Speaker have different UUID => this will generate bugs and duplicate profiles.<br>
                                 <a class="btn btn-warning" href="@routes.Backoffice.fixForInvalidSpeakers(speaker.uuid)">Fix and re-create Webuser for this Speaker</a>
                         </div>
                         </div>
                     }
                 </p>
-                <p>Webuser find from Speaker's email works ?  @if(Webuser.findByEmail(speaker.email).isDefined){ <label class="label label-success">YES</label> } else { <label class="label label-danger">No</label> }</p>
+                <p>Webuser find from Speaker's email works ?  @if(Webuser.findByEmail(speaker.email).isDefined){ <label class="badge badge-success">YES</label> } else { <label class="badge badge-danger">No</label> }</p>
             </div>
     </div>
 
 }
 @if(SecureCFPController.hasAccessToAdmin(req)){
     <div class="col-md-12">
-        <div class="panel panel-default">
-            <div class="panel-body">
+        <div class="card">
+            <div class="card-body">
                 <form action="@routes.Backoffice.deleteSpeaker(speaker.uuid)" method="POST">
                     <h3>Trash</h3>
                     <small>Please enter DEL in this input box and click on the button <input type="text" name="secu" value="" placeholder="type here DEL"></small>

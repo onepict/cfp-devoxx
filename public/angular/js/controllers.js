@@ -3,15 +3,168 @@
 /* Controllers */
 var mainController = angular.module('mainController', []);
 var homeController = angular.module('homeController', []);
+var programController = angular.module('programController', []);
 var reloadScheduleConfController = angular.module('reloadScheduleConfController', []);
 var deleteSlotController = angular.module('deleteSlotController', []);
 var publishController = angular.module('publishController', []);
 
 
-homeController.controller('HomeController', function HomeController($rootScope, $scope, $routeParams, AllScheduledConfiguration) {
-    AllScheduledConfiguration.get(function(jsonArray){
-       $scope.allScheduledConfiguration = jsonArray["scheduledConfigurations"];
-    });
+homeController.controller('HomeController', function HomeController($rootScope, $scope, $routeParams, AllScheduledConfiguration, DeleteScheduledConfiguration) {
+    $scope.refresh = function() {
+        AllScheduledConfiguration.get(function(jsonArray){
+            $scope.allScheduledConfiguration = jsonArray["scheduledConfigurations"];
+        });
+    };
+
+    $scope.deleteConfig = function(savedConf) {
+        if(confirm("Are you sure to delete this slots configuration ?")) {
+            savedConf._deleteSavedScheduleInProgress = true;
+            DeleteScheduledConfiguration.delete({id: savedConf.key.id}, function () {
+                savedConf._deleteSavedScheduleInProgress = false;
+                $scope.refresh();
+            });
+        }
+    };
+
+    $scope.refresh();
+});
+
+programController.controller('ProgramController', function ProgramController($rootScope, $scope, $routeParams, flash, ProgramScheduleResource, CreateAndPublishEmptyProgramSchedule) {
+    $scope.refresh = function() {
+        ProgramScheduleResource.get(function(result) {
+            $scope.programSchedules = result.programSchedules;
+            $scope.savedConfigurations = result.savedConfigurations;
+            $scope.savedConfigurations.sort((c1, c2) => c2.latestModification - c1.latestModification);
+            $scope.slottableProposalTypes = result.slottableProposalTypes;
+        });
+    };
+
+    $scope.atLeastOneReadonlyProgramSchedule = function() {
+        if(!$scope.programSchedules) {
+            return false;
+        }
+
+        return !!$scope.programSchedules.filter(s => !s.isEditable).length;
+    };
+
+    $scope.atLeastOnePublishedProgramSchedule = function() {
+        if(!$scope.programSchedules) {
+            return false;
+        }
+
+        return !!$scope.programSchedules.filter(s => s.isTheOnePublished).length;
+    };
+
+    $scope.createAndPublishEmptyProgramSchedule = function() {
+        $scope.createAndPublishEmptyProgramScheduleInProgress = true;
+        CreateAndPublishEmptyProgramSchedule.save(function () {
+            $scope.createAndPublishEmptyProgramScheduleInProgress = false;
+            $scope.refresh();
+        });
+    };
+
+    $scope.scheduleConfigById = function(scheduleConfigId) {
+        return $scope.savedConfigurations.find(config => config.id === scheduleConfigId);
+    };
+
+    $scope.availableConfigsForType = function(confType) {
+        return $scope.savedConfigurations.filter(config => config.confType === confType);
+    };
+
+    $scope.createNewProgramSchedule = function() {
+        $scope.programSchedules.unshift({
+            id: "",
+            name: "",
+            lastModifiedByName: "Me",
+            lastModified: Date.now(),
+            isEditable: true,
+            isTheOnePublished: false,
+            scheduleConfigurations: {},
+            specificScheduleCSSSnippet: "",
+            showSchedule: false,
+            showRooms: false,
+            favoritesActivated: false,
+            _isEdited: true
+        });
+    };
+
+    $scope.saveProgramSchedule = function(programSchedule) {
+        programSchedule._saveProgramScheduleInProgress = true;
+        var operation = programSchedule.id?"update":"save";
+        ProgramScheduleResource[operation]({ ...programSchedule, eventCode: "" }, function(persistedProgramSchedule){
+            programSchedule._saveProgramScheduleInProgress = false;
+            $scope.refresh();
+        });
+    };
+
+    $scope.deleteProgramSchedule = function(programSchedule) {
+      if(confirm("Do you really want to delete this Program schedule ?")) {
+        programSchedule._deleteProgramScheduleInProgress = true;
+        ProgramScheduleResource.delete({ id: programSchedule.id }, function() {
+          programSchedule._deleteProgramScheduleInProgress = true;
+          $scope.refresh();
+        });
+      }
+    };
+
+    $scope.publishProgramSchedule = function(programSchedule) {
+        programSchedule._publishProgramScheduleInProgress = true;
+        ProgramScheduleResource.publish({id: programSchedule.id}, function(){
+            programSchedule._publishProgramScheduleInProgress = true;
+            $scope.refresh();
+        });
+    };
+
+    $scope.fillCSSSnippetWithDefault = function(programSchedule) {
+        programSchedule.specificScheduleCSSSnippet = `
+.agendaTable.for_day_wednesday td.room.room_is_b_amphi {min-width: 100px;}
+.agendaTable.for_day_wednesday td.room.room_is_c_maillot {min-width: 100px;}
+.agendaTable.for_day_wednesday td.room.room_is_d_par241 {min-width: 100px;}
+.agendaTable.for_day_wednesday td.room.room_is_f_neu251 {min-width: 100px;}
+.agendaTable.for_day_wednesday td.room.room_is_e_neu252 {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_par242AB {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_neu253_t {min-width: 100px;}
+.agendaTable.for_day_wednesday td.room.room_is_par243_t {min-width: 100px;}
+.agendaTable.for_day_wednesday td.room.room_is_par202_203 {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_par221M_222M {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_par224M_225M {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_neu_232_232 {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_neu_234_235 {min-width: 100px; }
+.agendaTable.for_day_wednesday td.room.room_is_neu_212_213 {min-width: 100px; }
+
+.agendaTable.for_day_thursday td.room.room_is_b_amphi {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_c_maillot {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_d_par241 {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_f_neu251 {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_e_neu252 {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_par242AB {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_neu253_t {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_par243_t {min-width: 100px;}
+.agendaTable.for_day_thursday td.room.room_is_par202_203 {min-width: 80px;}
+.agendaTable.for_day_thursday td.room.room_is_par221M_222M {min-width: 80px;}
+.agendaTable.for_day_thursday td.room.room_is_par224M_225M {min-width: 80px;}
+.agendaTable.for_day_thursday td.room.room_is_neu_232_232 {min-width: 80px;}
+.agendaTable.for_day_thursday td.room.room_is_neu_234_235 {min-width: 80px;}
+.agendaTable.for_day_thursday td.room.room_is_neu_212_213 {min-width: 80px;}
+
+.agendaTable.for_day_friday td.room.room_is_b_amphi {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_c_maillot {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_d_par241 {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_f_neu251 {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_e_neu252 {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_par242AB {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_neu253_t {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_par243_t {min-width: 100px;}
+.agendaTable.for_day_friday td.room.room_is_par202_203 {min-width: 80px;}
+.agendaTable.for_day_friday td.room.room_is_par221M_222M {min-width: 80px;}
+.agendaTable.for_day_friday td.room.room_is_par224M_225M {min-width: 80px;}
+.agendaTable.for_day_friday td.room.room_is_neu_232_232 {min-width: 80px;}
+.agendaTable.for_day_friday td.room.room_is_neu_234_235 {min-width: 80px;}
+.agendaTable.for_day_friday td.room.room_is_neu_212_213 {min-width: 80px;}        
+        `;
+    }
+
+    $scope.refresh();
 });
 
 mainController.controller('MainController', function MainController($rootScope, $scope, $routeParams, SlotService, ApprovedTalksService, flash) {
@@ -29,6 +182,7 @@ mainController.controller('MainController', function MainController($rootScope, 
         } else {
             console.log("No schedule configuration loaded");
             $scope.approvedTalks =  allApproved["approvedTalks"].talks ;
+            $rootScope.title = "Create a new " + $routeParams.confType + " schedule from scratch"
         }
     });
 
@@ -50,6 +204,7 @@ mainController.controller('MainController', function MainController($rootScope, 
             });
         } else {
             console.log("No schedule configuration loaded");
+            $rootScope.available = $scope.slots.length;
         }
     });
 
@@ -67,6 +222,8 @@ mainController.controller('MainController', function MainController($rootScope, 
 
                 // Remove from left
                  maybeSlot2.proposal=undefined;
+            } else {
+                $rootScope.available--
             }
 
             // Update the slot
@@ -94,11 +251,12 @@ mainController.controller('MainController', function MainController($rootScope, 
         } else {
             var talk=maybeSlot.proposal ;
 
-            // Remove from left
+            // Remove from right
             maybeSlot.proposal=undefined;
 
-            // Add back to right
+            // Add back to left
             $scope.approvedTalks = $scope.approvedTalks.concat(talk);
+            $rootScope.available++
         }
     };
 
@@ -125,21 +283,8 @@ reloadScheduleConfController.controller('ReloadScheduleConfController', function
                     $rootScope.available++;
                 }
             });
-
+            $rootScope.title = "Create a new " + $scope.loadedScheduledConfiguration.confType + " schedule from " + $routeParams.id
             $location.path('/slots').search({confType: newConfType}).replace();
         }
-    });
-
-});
-
-deleteSlotController.controller('DeleteSlotController', function DeleteSlotController($routeParams,$location, DeleteScheduledConfiguration,flash ){
-    DeleteScheduledConfiguration.delete({id: $routeParams.id}, function () {
-        flash("Deleted configuration");
-    });
-});
-
-publishController.controller('PublishController', function PublishController($routeParams,$location, PublishScheduledConfiguration, flash ){
-    PublishScheduledConfiguration.save({id: $routeParams.id, confType: $routeParams.confType}, function (){
-        flash("Configuration published");
     });
 });

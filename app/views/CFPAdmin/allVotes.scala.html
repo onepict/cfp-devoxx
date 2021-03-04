@@ -7,21 +7,21 @@
 
         <div class="row">
             <div class="col-md-12">
-                <a href="@routes.CFPAdmin.allVotes("all", None)" class="btn btn-primary btn-sm"><i class="icon-adjust"></i>
+                <a href="@routes.CFPAdmin.allVotes("all", None)" class="btn btn-primary btn-sm"><i class="fas fa-adjust"></i>
                     All</a>
                 @for(proposalType <- ConferenceDescriptor.ConferenceProposalTypes.ALL) {
-                    <a href="@routes.CFPAdmin.allVotes(proposalType.id, None)" class="btn btn-primary btn-sm"><i class="@ProposalConfiguration.getHTMLClassFor(proposalType)"></i> @Messages(proposalType.label + ".simple")</a>
+                    <a href="@routes.CFPAdmin.allVotes(proposalType.id, None)" class="btn btn-primary btn-sm"><i class="@ConferenceDescriptor.ConferenceProposalConfigurations.getHTMLClassFor(proposalType)"></i> @Messages(proposalType.label + ".simple")</a>
                 }
                 <br>
-                <i class="icon-filter"></i> Show only:
+                <i class="fas fa-filter"></i> Show only:
                 @Track.allIDs.map { idTrack =>
-                    <a href="@routes.CFPAdmin.allVotes(confType, Some(idTrack))" class="btn btn-default btn-sm">@idTrack
+                    <a href="@routes.CFPAdmin.allVotes(confType, Some(idTrack))" class="btn btn-primary btn-sm">@idTrack
                         - @confType</a>
                 }
                 <br>
-                <a href="@routes.LeaderboardController.doComputeVotesTotal()" class="btn btn-success btn-sm"><i class="icon-compass"></i>
+                <a href="@routes.LeaderboardController.doComputeVotesTotal()" class="btn btn-success btn-sm"><i class="fas fa-compass"></i>
                     Recompute total and votes</a> -
-                <a href="@routes.CFPAdmin.allApprovedSpeakersByCompany(false)" class="btn btn-danger btn-sm"><i class="icon-double-angle-down"></i>
+                <a href="@routes.CFPAdmin.allApprovedSpeakersByCompany(false)" class="btn btn-danger btn-sm"><i class="fas fa-angle-double-down"></i>
                     All talks by company</a>
                 <br>
 
@@ -38,13 +38,13 @@
                 }
                 <br>
                 @defining(allVotes.count(_._1.state == ProposalState.DECLINED)) { declinedTotal =>
-                    <span class="label label-success">@totalApproved approved</span> <span class="label label-declined">
-                        - @declinedTotal declined</span> <span class="label label-warning">
+                    <span class="badge badge-success">@totalApproved approved</span> <span class="badge badge-declined">
+                        - @declinedTotal declined</span> <span class="badge badge-warning">
                         = @(totalRemaining + declinedTotal) remaining</span>
                 }
                 <br>
-                <span class="label label-primary">@allVotes.map(_._1).count(_.lang == "fr")
-                    FR</span> <span class="label label-default">@allVotes.map(_._1).count(_.lang == "en") EN</span>
+                <span class="badge badge-primary">@allVotes.map(_._1).count(_.lang == "fr")
+                    FR</span> <span class="badge badge-secondary">@allVotes.map(_._1).count(_.lang == "en") EN</span>
 
             </div>
 
@@ -69,7 +69,7 @@
                             <th>Type</th>
                             <th>Track</th>
                             <th>Lang</th>
-                            <th><i class="icon-thumbs-up"></i> / <i class="icon-thumbs-down"></i></th>
+                            <th><i class="fas fa-thumbs-up"></i> / <i class="fas fa-thumbs-down"></i></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -84,7 +84,7 @@
                                     }
                                     </td>
                                     <td>
-                                        <small>@gtScore by @gtVoteCast <i class="icon-user"></i></small>
+                                        <small>@gtScore by @gtVoteCast <i class="fas fa-user"></i></small>
                                     </td>
                                     <td class="number_table">
                                     @defining(voteAndTotalVotes._2) { totalVoters: TotalVoter =>
@@ -102,17 +102,17 @@
                                     <td>
                                         <a href="@routes.CFPAdmin.openForReview(proposal.id)" target="@proposal.id"><small>@proposal.title
                                             @if(proposal.sponsorTalk) {
-                                                &nbsp;<label class="label label-info"><i class="icon-dollar"></i> sponsor</label>
+                                                &nbsp;<label class="badge badge-info"><i class="fas fa-medal"></i> sponsor</label>
                                             }
                                         </small></a>
                                     </td>
                                     <td>
                                     @proposal.allSpeakers.map { s: Speaker =>
                                         @if(models.Invitation.isInvited(s.uuid)) {
-                                            <span class="label label-warning">♥ @s.cleanName <small>
+                                            <span class="badge badge-warning">♥ @s.cleanName <small>
                                                 [@s.company.map(_.toLowerCase.capitalize)]</small></span>
                                         } else {
-                                            <span class="label label-default">@s.cleanName <small>
+                                            <span class="badge badge-secondary">@s.cleanName <small>
                                                 [@s.company.map(_.toLowerCase.capitalize)]</small></span>
                                         }
                                     }
@@ -127,37 +127,22 @@
                                         [@proposal.lang]
                                     </td>
                                     <td>
-                                        @if(proposal.state == ProposalState.SUBMITTED || proposal.state == ProposalState.BACKUP) {
+                                        <div class="btn-group" role="group">
                                             @if(approved) {
-                                                <a href="@routes.ApproveOrRefuse.cancelApprove(proposal.id)" class="cancelAcceptBtn btn btn-sm btn-danger"><i class="icon-remove"></i>
-                                                    Cancel approve</a>
-                                            } else {
-                                                @if(refused) {
-                                                    <a href="@routes.ApproveOrRefuse.cancelRefuse(proposal.id)" class="cancelRefuseBtn btn btn-sm btn-danger"><i class="icon-remove"></i>
-                                                        Cancel refuse</a>
-                                                } else {
-                                                    @if(proposal.state == ProposalState.BACKUP) {
-                                                        <i class="icon-exclamation-sign"></i> Backup
-                                                    }
-                                                    <a href="@routes.ApproveOrRefuse.doApprove(proposal.id)" class="approveBtn btn btn-sm btn-success"><i class="icon-thumbs-up"></i>
-                                                        Approve</a>
-                                                    <a href="@routes.ApproveOrRefuse.doRefuse(proposal.id)" class="refuseBtn btn btn-sm btn-danger"><i class="icon-thumbs-down"></i>
-                                                        Refuse</a>
-                                                }
+                                                <a href="@routes.ApproveOrRefuse.cancelApprove(proposal.id)" class="cancelAcceptBtn btn btn-danger" title="Cancel Pre-Approve"><i class="fas fa-undo"></i></a>
                                             }
-                                        }
+                                            @if(refused) {
+                                                <a href="@routes.ApproveOrRefuse.cancelRefuse(proposal.id)" class="cancelRefuseBtn btn btn-danger" title="Cancel Pre-Refuse"><i class="fas fa-undo"></i></a>
+                                            }
+                                            @if(!approved && !refused) {
+                                                <a href="@routes.ApproveOrRefuse.doApprove(proposal.id)" class="approveBtn btn btn-success" title="Pre-Approve"><i class="fas fa-thumbs-up"></i></a>
+                                                <a href="@routes.ApproveOrRefuse.doRefuse(proposal.id)" class="refuseBtn btn btn-danger" title="Pre-Refuse"><i class="fas fa-thumbs-down"></i></a>
+                                            }
+                                        </div>
                                         <br>
-                                        <span class="label label-@proposal.state.code">@proposal.state.code</span>
-                                        @if(refused && proposal.state.code == ProposalState.ACCEPTED.code) {
-                                            <a href="@routes.ApproveOrRefuse.cancelRefuse(proposal.id)" class="cancelRefuseBtn btn btn-sm btn-danger"><i class="icon-check"></i>
-                                                Remove from refused list</a>
-                                        }
-                                        @if(approved && proposal.state.code == ProposalState.REJECTED.code) {
-                                            <a href="@routes.ApproveOrRefuse.cancelApprove(proposal.id)" class="cancelAcceptBtn btn btn-sm btn-danger"><i class="icon-remove"></i>
-                                                Cancel approve</a>
-                                        }
-
-
+                                        <span class="badge badge-pill badge-@proposal.state.code">@proposal.state.code</span>
+                                        @if(approved && (proposal.state == ProposalState.SUBMITTED || proposal.state == ProposalState.BACKUP)) {<span class="badge badge-pill badge-success"><i class="fas fa-thumbs-up"></i> pre-approved</span>}
+                                        @if(refused && (proposal.state == ProposalState.SUBMITTED || proposal.state == ProposalState.BACKUP)) {<span class="badge badge-pill badge-danger"><i class="fas fa-thumbs-down"></i> pre-refused</span>}
                                     </td>
                                 </tr>
                             }

@@ -1,3 +1,5 @@
+# For single quote value, each value needs to be double escaped
+# http://stackoverflow.com/questions/12070093/how-to-use-single-quotes-in-i18n-in-playframework2
 login.error=Email inconnu ou code d''accès invalide
 menu.home=Accueil
 email=Adresse email
@@ -13,8 +15,6 @@ signup=S''inscrire
 signup.long=S''inscrire en tant qu''orateur pour Devoxx France
  
 index.method1=S''authentifier
-# For single quote, you need to double escape
-# http://stackoverflow.com/questions/12070093/how-to-use-single-quotes-in-i18n-in-playframework2
 index.welcome=Déjà inscrit ? Authentifiez-vous avec votre code d''accès :
  
 index.method2=Authentifiez-vous avec OpenId
@@ -96,7 +96,8 @@ title.help=Proposez un titre simple, clair, qui résume ce que le participant va
 summary=Résumé de votre présentation pour le participant
 summary.help=Décrivez votre proposition, telle que le conférencier la lira. Vous pouvez utiliser la syntaxe <a href="http://daringfireball.net/projects/markdown/syntax/" target="_blank">Markdown</a>.
 lang=Langue
-lang.help=75% des présentations à Devoxx France doivent être en Français, 25% en Anglais. Si vous êtes francophone, merci de présenter en Français.
+lang.help=75% des présentations à Devoxx France doivent être en Français, 25% en Anglais.
+lang.important=Si vous êtes francophone, merci de présenter en Français.
 mainSpeaker=Présentateur principal
 mainSpeaker.help=Vous avez la possibilité d''ajouter d''autres présentateurs une fois que la proposition est créé. Nous offrons une entrée 3 jours à Devoxx France uniquement pour les formats de présentation suivants : Conference, University, Hands-on-Labs et Tools-in-Action.
 talkType.help=Chaque type de conférence est détaillé sur la page <a href="http://www.devoxx.fr/faq" target="new">FAQ</a> du site Devoxx France.
@@ -106,8 +107,9 @@ talkType=Type de présentation
 audienceLevel=Niveau de la présentation
 privateMessage=Message pour le comité de sélection
 privateMessage.help=Précisez ici toutes les informations importantes sur votre présentation, que seul le comité de sélection verra. Détaillez votre plan de présentation, l''ensemble des éléments qui doivent nous faire choisir votre proposition de sujet. Vous pouvez inclure l''URL vers vos diapositives si vous le souhaitez.
+privateMessage.help.important=Si vous avez des doutes sur votre proposition, n'hésitez pas à nous le dire et nous vous aiderons à l'améliorer.
 sponsorTalk=Merci de cocher cette case s''il s''agit de la présentation "exposant/sponsor" lié au sponsoring
-sponsorTalk.help=Les sponsors Gold et Platinium peuvent soumettre une proposition de sujet au format Conférence, qui sera automatiquement acceptée. Ne cochez pas cette case si votre société est sponsor alors que vous souhaitez simplement proposer un sujet.
+sponsorTalk.help=Les sponsors Diamond et Platinum peuvent soumettre une proposition de sujet au format Conférence, qui sera automatiquement acceptée. Ne cochez pas cette case si votre société est sponsor alors que vous souhaitez simplement proposer un sujet.
 sponsorTalk.help.title=Talk sponsor
 sponsor.name.plz=Merci d''indiquer le nom de votre société dans le champ "Message privé pour le comité"
 sponsorTalk.checkbox=Présentation sponsor/exposant
@@ -127,18 +129,17 @@ preview.warn2=dans le tableau de la page d''accueil.
 presubmit.reminder=Lorsque vous êtes prêt à envoyer votre proposition, n''oubliez pas d''utiliser le bouton "Soumettre"
 
 # Proposal type
-key.label=Keynote, 20mn, jeudi et vendredi matin
+key.label=Keynote, 20mn, jeudi et vendredi matin - ⛔️ Uniquement sur invitation.
 conf.label=Conference, 45mn, jeudi et vendredi
 uni.label=University, 3h, mercredi uniquement
 tia.label=Tools in Action, 30mn, mercredi/jeudi
 quick.label=Quickie, 15mn, jeudi et vendredi midi
 amd.label=Après-midi des Décideurs, 30mn, jeudi après-midi
 bof.label=Bird of a Feather, 1h, jeudi soir uniquement
-other.label=Autre type de présentation
+other.label=Autre type de présentation - ⛔️ Uniquement sur invitation.
 lab.label=Hands-on Lab, 3h, mercredi, jeud et vendredi
 hack.label=Hackaton (événement spécial)
-ignite.label=Conférence Ignite, 5mn, jeudi et vendredi de 13h à 14h
- 
+
 # Bug report
 Issue.report=Notifier l''équipe
 btn.send=Envoyer
@@ -149,12 +150,10 @@ cfp.msg.sendMsg=Envoyer votre message au comité
  
 # Home
 appel.conf=Appel aux conférenciers
-appel.conf.dates=Call for Paper, Devoxx France, 17 au 19 avril 2019
 cfp.opening=Ouverture du CFP
 cfp.closing=Fermeture du CFP
 cfp.closing.date=pensez à accepter ou décliner les sujets approuvés par le comité.
 cfp.program=Annonce du programme :
-cfp.program.date=à partir de la mi-février 2019
 video.title=Vidéos des éditions précédentes
 video.tag=Retrouvez toutes les vidéos des éditions précédentes sur le site
 theme.title=Thèmes
@@ -164,10 +163,10 @@ track.help=Les Tracks permettent d''indiquer le thème principal de votre prése
 track.title=Titre
 track.description=Description
 
-track.java.title=Java, JVM, Javas SE/EE
-track.java.desc=Tout sur Java, la JVM, Java SE, Java EE.
-java.label=Java, JVM, Javas SE/EE
-java.leaderboard=Java, JVM, Javas SE/EE
+track.java.title=Java, JVM
+track.java.desc=Tout sur Java et la JVM.
+java.label=Java, JVM
+java.leaderboard=Java, JVM
 
 track.mobile.title=Mobile, Internet of Things, Réalité Augmentée
 track.mobile.desc=Mobile, l’internet des objets, la réalité augmentée.
@@ -220,11 +219,10 @@ avatarUrl.defined=Votre photo (largeur recommandée 120px)
 created.title=Demande d''inscription enregistrée
 created.text1=Nous allons vous envoyer un courrier électronique de validation dans quelques minutes.
 created.text2=Validez votre adresse pour terminer votre enregistrement, votre code d''accès vous sera donné lorsque vous validerez votre email.
-created.text3=Vous pourrez alors vous authentifier et commencer à proposer vos sujets pour Devoxx France.
+created.text3=Vous pourrez alors vous authentifier et accéder au site.
  
 # Prepare signup
 signup.title=Inscription orateur
-signup.txt1=Inscrivez-vous pour proposer vos sujets de présentation pour la conférence Devoxx France 2019 :
 signup.txt2=Un email de validation est envoyé à l''adresse indiquée. Votre profil ne sera actif une fois que votre adresse de courrier électronique sera validée.
  
 # edit profile
@@ -244,6 +242,8 @@ table.pres.delete=Mettre à la poubelle
 table.pres.action=Actions
 table.pres.doSubmit=Soumettre
 table.pres.doDelete=Effacer
+
+proposal.limit=En tant que speaker, vous pouvez proposer un maximum de {0} propositions parmi les types: {1}
 proposal.draft.reminder=N''oubliez pas de soumettre ce sujet
  
 total.draft={0} propositions
@@ -272,11 +272,12 @@ secondarySpeaker=Présentateur adjoint (optionnel)
 select.secondarySpeaker=Sélectionnez un speaker
 proposal.otherSpeakers=Autres présentateurs
 otherSpeakers=Autres présentateurs
-proposal.buyPass=Entrée 3 jours "speaker" inclus ?
+proposal.buyPass=Entrée {0} jours "speaker" inclus?
 freepass=Oui
 no.freepass=Non
 speakers.updated=Liste des présentateurs mises à jour
 noOther.speaker=---- Pas d''autre présentateur ----
+proposal.noOtherSpeakers=Votre type de proposition ne permet pas d'ajouter d'autre présentateur.
  
 # short talk
 conf=Conference
@@ -356,7 +357,7 @@ admin.draft.warning3=Etat actuel de cette proposition :
  
 newProposal.maxLength=Maximum 1200 caractères. Possibilité d''utiliser Markdown
 preview.txt=Aperçu de votre présentation dans le programme papier
-tags.renderComment.postedBy=Posté par {0} - {1}
+tags.renderComment.postedBy=Posté le {0} à {1}
 admin.btn.sponsor=Voir comme un sponsor
 leaderboard.compute=Calcul des stats en cours...
  
@@ -369,7 +370,7 @@ admin.sp.approved.txt=Ce sujet a été Approuvé par le comité de sélection.
 btn.abstention=Voter 0 pour passer au suivant
  
 cfp.isClosed=Le CFP est fermé
-cfp.isClosed.expl=Le CFP est actuellement fermé.
+cfp.isClosed.expl=Le CFP est actuellement fermé. Vous pouvez vous connecter pour vérifier vos propositions de présentation.
 cfp.closed.enter=S''authentifier
 tbl.cfp.closed=CFP fermé
 cfp.closed.restrictions=Le CFP est fermé. Vous pouvez éditer votre proposition. Cependant, merci de ne pas la modifier complètement par rapport à la version originale, sans quoi nous l''annulerons systématiquement.
@@ -492,11 +493,6 @@ sw.agenda.friday=Vendredi
 sw.show.wed=Mercredi
 sw.show.thu=Jeudi
 sw.show.fri=Vendredi
-sw.show.title.wed=Journée du Mercredi 17 avril 2019
-sw.show.title.thu=Journée du Jeudi 18 avril 2019
-sw.show.title.fri=Journée du Vendredi 19 avril 2019
- 
- 
 sw.horaires=Horaires
 sw.breakfast=Accueil et petit-déjeuner
 sw.mainEvents=Evénements principaux
@@ -504,7 +500,7 @@ sw.lunch=Déjeuner
 
 sw.reg=Accueil et petit déjeuner
 sw.dej=Accueil et petit déjeuner
-sw.chgt=Pause café
+sw.chgt=Pause courte
 sw.coffee=Pause café
 sw.coffee.break=Pause café
 sw.endOfDay=Fin de la journée, fermeture de l''espace d''exposition
@@ -551,11 +547,6 @@ btn.saveAndSend=Sauver et envoyer au comité
 btn.saveDraft=Sauver comme Draft (Brouillon)
 cfp.reminder=Rappel
 cfp.reminder.proposals=pensez à soumettre votre brouillon au comité en cliquant sur "Envoyer"
-cfp.title=Devoxx France 2019
-conf.label.simple=Conférence
-CONF.subtitle=FR
-CONF.title=Devoxx France 2019
-conference.dates=17 au 19 avril 2019
 contacted=Speaker contacté
 d1.label=Uniquement des slides
 d2.label=Slides et du code
@@ -579,11 +570,8 @@ code.label.simple=Codestory
 level1.label=Ouvert à tout niveau d''audience, débutant comme expert
 level2.label=Pour une audience intermédiaire, avec une connaissance sur le sujet
 level3.label=Pour un public d''expert ou de sénior sur ce sujet
-longName=Devoxx FR 2019 CFP
 longSplittedName_colored=x
-longSplittedName_whiteEnd=FR 2019
 longSplittedName_whiteStart=Devox
-longYearlyName=Devoxx France 2019
 mail.access_code.subject=Votre code d''accès présentateur pour {0}
 mail.account_created.subject=Bienvenue sur le CFP pour {0}
 mail.cfp_message_to_speaker.subject=[{1}] {0}
@@ -606,16 +594,13 @@ qualifications.otherproposals=Sujet(s) proposé(s) par le speaker
 quick.label.simple=Quickie
 remove.sponsorFlag=Retirer le flag sponsor de cette présentation
 shortName=Devoxx FR
-shortYearlyName=Devoxx FR 2019
 ssj.label=Server Side Java
-start=Startup presentation
-start.label=
-start.label.simple=
 sw.hackatons=Hackatons
 table.pres.trash=Effacer cette proposition
 tia.label.simple=Tools in Action
 uni.label.simple=University
 unknown=Inconnu
+unknown.label=Inconnu
 wishlist.cancelEdit=Retourner à votre liste de requêtes
 wishlist.createRequest=Créer une requête
 wishlist.editRequest=Editer une requête
@@ -652,10 +637,10 @@ wl_travel.checkbox=Oui, inclure le remboursement
 wl_unknown=Inconnu
 admin.btn.speakersInvited=Tous les speakers invités
 
-bof.label.simple=Bird of a Feather
 mail.email_validation.subject=Bienvenue à {0}, merci de valider votre adresse email
 mail.issue_reported.subject=Nouvel incident reporté sur le site du CFP
 mail.proposal_approved.subject=Votre proposition de sujet a été approuvée {0}
+mail.proposal_refused.subject=Votre proposition a été refusée {0}
 mail.reset_password_link.subject=Vous avez demandé à ré-initialiser votre code d'accès speaker pour {1}
 msg_pub=Envoyer un message au présentateur
 qualifications2=Qualifications et expériences du présentateur
@@ -678,7 +663,7 @@ wl_keynote=Speaker keynote
 wl_keynote.checkbox=Oui, cela serait un speaker keynote
 
 showProposal.comment.ar=Poser une question à l''équipe à propos de cette présentation
-ar.proposalType=Type de présentation :
+ar.proposalType=Type de présentation
 ar.proposalId=Identifiant de la présentation :
 
 tag.proposal.title=Titre
@@ -725,7 +710,7 @@ gt.todo=Votre liste de sujet à revoir :
 
 gt.yourVotes=Vos votes
 gt.personnal=Vos statistiques personnelles
-gt.youReviewed=Vous avez revu {0} sujet(s)
+gt.youReviewed=Sur {0} sujet(s), vous avez revu {1} sujet(s) et {2} revue(s) reste(nt) à faire.
 gt.youVoted=Vous avez donné une note pour {0} sujet(s)
 gt.averageVote=Votre note moyenne est {0}
 gt.noVotes=Vous n''avez pas encore commencé à revoir les sujets. Ne perdez pas de temps car cela peut prendre beaucoup de temps.
@@ -736,9 +721,12 @@ gt.home=Retour à l''accueil
 gt.vote.ok=Votre vote a été enregistré
 gt.youcan=Vous pouvez maintenant :
 gt.nomore=Vous n''avez plus de sujets à revoir pour l''instant, revenez plus tard lorsque d''autres speakers auront proposé des sujets.
-gt.nextTalk=Continuer et évaluer le sujet suivant
+gt.nextTalkTrackAndType=Continuer et évaluer un autre sujet du type [{0}] dans la track [{1}]
 gt.nextTalkType=Continuer et évaluer un autre sujet du type [{0}]
+gt.nextTalkDifferentType=Continuer et évaluer un autre sujet d''un type différent : [{0}]
 gt.nextTalkTrack=Continuer et évaluer une proposition dans la track [{0}]
+gt.nextTalkDifferentTrack=Continuer et évaluer un autre sujet d''une track différente : [{0}]
+
 
 gtAdmin.totalGT=Nombre de personnes avec un Golden Ticket : {0}
 gtAdmin.top5=Top 5 par score
@@ -793,7 +781,7 @@ refused.termsConditions=Attention, vous avez refusé les Terms & Conditions Devo
 
 admin.cfp.empty.track=Il n''y a pas de nouvelles propositions de sujets dans la track {0} pour l''instant.
 
-cfp.filter.on=Filtrer par Track :
+cfp.filter.on=Filtrer par Track
 cfp.filter.off=Pas de filtre
 
 cfpadmin.totalReviewed={0} revus
@@ -819,11 +807,6 @@ fav.day.5=Vendredi
 
 mydevoxx.authenticated=Vous êtes authentifié via MyDevoxx. Vous pouvez sélectionner les sessions que vous souhaitez voir, et les ajouter dans votre agenda.
 
-visitor.welcome.title=Bienvenue {0}
-visitor.welcome.text1=Vous êtes maintenant authentifié comme visiteur {0}. Vous pouvez marquer vos sujets favoris dans l''agenda de {0} et recharger cet agenda plus tard, via cette page.
-visitor.welcome.profile=Liste des sujets marqués comme favoris
-visitor.welcome.publisher=Parcourir l''agenda des conférences
-
 sms.text1=Vous souhaitez être notifié par SMS de l''heure de passage ? En cas de changement de salle de votre présentation ? Renseignez votre numéro de téléphone :
 sms.explanation=Numéro de téléphone au format international (exemple : +33661708090)
 confirm.phone=Confirmer votre numéro de téléphone
@@ -836,16 +819,16 @@ invalid.confirmation.code=Code de confirmation incorrect, ou ayant expiré. Merc
 invalid.phone=Numéro de téléphone invalide, il doit respecter le format international. Pour la France, les numéros de téléphones sont de la forme +3366....
 sms.confirmationTxt=Code de confirmation Devoxx à saisir sur le site du CFP : {0}
 
-phoneNumber=Numéro de téléphone portable
+phoneNumber=Numéro de téléphone portable (en cas d''urgence seulement)
 invalid.phoneNumber=Numéro de téléphone non valide
 invalid.phone.txt=Votre numéro de téléphone n''est pas valide ou n''est pas autorisé par notre plate-forme. Contactez l''équipe pour que nous puissions autoriser le pays de votre numéro de portable, ou corrigez le numéro.
 
 admin.btn.devoxxians=Tous les Devoxxians
 
-cfp.maxProposals.reached=Attention, vous ne pouvez pas soumettre plus de {0} sujets. Nous limitons le nombre de soumissions volontairement.
+cfp.maxProposals.reached=Votre proposition n''a pas été soumise. En tant que speaker, vous pouvez proposer un maximum de {0} propositions parmi les types: {1}
 videoLinkMessage=Lien vers une vidéo
 videoLinkMessage.help=Vous pouvez partager un lien vers une vidéo où vous avez été orateur ou une vidéo en rapport avec votre proposition de sujet. Indiquez l''URL complète YouTube ou autre.
-videoLink=Vidéo relative à votre proposition 
+videoLink=Vidéo relative à votre proposition
 tag.title=Merci de sélectionner au moins 3 Tags pour décrire votre proposition de sujet
 tag.help.title=A propos des Tags
 tag.help.txt=Vous avez la possibilité de sélectionner entre 3 et 5 mots clés (tag) pour décrire votre proposition. Il n''est pas possible de créer ses propres tags. Ces tags seront utilisés pour le programme du conférencier. Les tags sont en Anglais uniquement. Commencez à saisir les premières lettres, puis sélectionnez ensuite le tag voulu.
@@ -882,8 +865,47 @@ cfp.member=Membre du CFP
 
 golden.welcome.txt=Bienvenue sur l''espace Golden Ticket. Achetez une place Golden Ticket sur le site de {0} et participez à la revue des sujets, votez, et donnez votre avis !
 
-
-l.proposal_approved.subject=Votre proposition a été approuvée {0}
-mail.proposal_refused.subject=Votre proposition a été refusée {0}
-
 publisher.proposal.roomHidden=La salle sera affectée entre 24 et 72h avant la conférence
+
+# prepareSignupVisitor
+visitor.registration.title=Devoxx France
+visitor.signup.txt1=Inscrivez-vous pour sauvegarder votre agenda pour la conférence {0} :
+visitor.signup.txt2=Un courrier électronique de validation sera envoyé à votre adresse. Votre profil sera activé, une fois l'email validé. Nous ne vous enverrons aucun autre courrier électronique, cette inscrition ne concerne que l''agenda.
+
+# homeVisitor
+home.visitor.header=Accès visiteur à la conférence
+home.visitor.title=Inscrivez-vous
+home.welcome.txt=Bienvenue à {0}, merci de vous authentifier ou de créer un profil.
+visitor.signin=Connexion
+visitor.register=S''enregistrer
+visitor.index.signup2=Inscrivez-vous comme visiteur, et sauvegardez votre agenda, vos sujets préférés à revoir plus tard.
+
+# welcomeVisitor
+visitor.welcome.title=Bienvenue {0}
+visitor.welcome.text1=Vous êtes maintenant authentifié comme visiteur {0}. Vous pouvez marquer vos sujets favoris dans l''agenda de {0} et recharger cet agenda plus tard, via cette page.
+visitor.welcome.profile=Liste des sujets marqués comme favoris
+visitor.welcome.publisher=Parcourir l''agenda des conférences
+
+# What needs to be updated each year :
+# ------------------------------------
+# We prefer to update one property file, so that string interpolation is faster, rather than
+# to try to use the ConferenceDescriptor for some static part of the web site.
+appel.conf.dates=Call for Paper, Devoxx France, 30 juin au 2 juillet 2021
+cfp.program.date=à partir de mai 2021
+signup.txt1=Inscrivez-vous pour proposer vos sujets de présentation pour la conférence Devoxx France 2021 :
+sw.show.title.wed=Journée du Mercredi 30 juin 2021
+sw.show.title.thu=Journée du Jeudi 1er juillet 2021
+sw.show.title.fri=Journée du Vendredi 2 juillet 2021
+cfp.title=Devoxx France 2021
+conf.label.simple=Conférence
+CONF.subtitle=FR
+CONF.title=Devoxx France 2021
+conference.dates=30 juin au 2 juillet 2021
+longName=Devoxx FR 2021 CFP
+longSplittedName_whiteEnd=FR 2021
+longYearlyName=Devoxx France 2021
+shortYearlyName=Devoxx FR 2021
+
+your.reviewer.rank=Votre classement
+reviewed=sujets revus
+no.more.talk=Vous avez revu l''intégralité des propositions soumises

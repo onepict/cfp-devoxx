@@ -27,6 +27,7 @@ import java.util
 
 import akka.actor._
 import controllers.LeaderboardController
+import models.ConferenceDescriptor.ConferenceProposalTypes
 import models._
 import notifiers.Mails
 import org.apache.http.client.entity.UrlEncodedFormEntity
@@ -36,7 +37,6 @@ import org.apache.http.message.BasicNameValuePair
 import play.api.libs.json.Json
 import play.api.libs.ws.WS
 import play.libs.Akka
-
 import play.api.Play.current
 
 /**
@@ -228,7 +228,10 @@ class ZapActor extends Actor {
     for (reporter <- Webuser.findByUUID(reporterUUID);
          speaker <- Webuser.findByUUID(proposal.mainSpeaker)) yield {
       Event.storeEvent(Event(proposal.id, reporterUUID, "Sent proposal Refused"))
-      Mails.sendProposalRefused(speaker, proposal)
+
+      if(ConferenceDescriptor.isSendProposalRefusedEmail) {
+        Mails.sendProposalRefused(speaker, proposal)
+      }
       Proposal.reject(reporterUUID, proposal.id)
     }
   }
@@ -467,7 +470,7 @@ class ZapActor extends Actor {
     ScheduleConfiguration.findSlotForConfType(confType, proposalId).foreach {
       slot =>
         val proposal = slot.proposal.get
-        ScheduleConfiguration.getPublishedSchedule(proposal.talkType.id).foreach {
+        ScheduleConfiguration.getPublishedScheduleSlotConfigurationId(proposal.talkType.id).foreach {
           id =>
             ScheduleConfiguration.loadScheduledConfiguration(id).foreach { p =>
               val newSlots = p.slots.map {
@@ -479,7 +482,7 @@ class ZapActor extends Actor {
                   }
               }
               val newID = ScheduleConfiguration.persist(confType, newSlots, Webuser.Internal)
-              ScheduleConfiguration.publishConf(newID, confType)
+              ProgramSchedule.updatePublishedScheduleConfiguration(id, newID, ConferenceProposalTypes.valueOf(confType), None)
             }
         }
     }

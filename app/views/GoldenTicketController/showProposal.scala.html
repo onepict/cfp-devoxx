@@ -5,12 +5,12 @@
 @main("Golden Ticket - Show " + proposal.id) {
     <div class="row">
         <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3><i class="icon-signin"></i> @Messages("admin.proposal")</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-sign-in-alt"></i> @Messages("admin.proposal")</h3>
                 </div>
 
-                <div class="panel-body">
+                <div class="card-body">
                     <table class="table table-bordered table-stripped">
                         <thead>
                             <tr>
@@ -50,8 +50,8 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="panel-heading">
-                        <h3><i class="icon-user"></i>
+                    <div class="card-header">
+                        <h3><i class="fas fa-user"></i>
                             @if(proposal.secondarySpeaker.isDefined) {
                                 @Messages("admin.sp.speakers")
                             } else {
@@ -97,7 +97,7 @@
                             @if(proposal.sponsorTalk) {
                                 <tr>
                                     <th>@Messages("admin.sp.sponsorTalk")</th>
-                                    <td><span class="label label-success">@Messages("admin.sp.sponsorTalk.label")</span></td>
+                                    <td><span class="badge badge-success">@Messages("admin.sp.sponsorTalk.label")</span></td>
                                 </tr>
                             }
                         </tfoot>
@@ -123,31 +123,31 @@
             </div>
         }
         <div class="col-md-12">
-            <div class="panel panel-default">
+            <div class="card">
             @defining(ApprovedProposal.isApproved(proposal.id, proposal.talkType.id)) { approved =>
                 @if(approved) {
-                    <div class="panel-heading">
-                        <h3><i class="icon-check"></i> @Messages("proposal.approved.noVotes") <span class="label label-@proposal.state.code">@Messages(proposal.state.code)</span> </h3>
+                    <div class="card-header">
+                        <h3><i class="fas fa-check"></i> @Messages("proposal.approved.noVotes") <span class="badge badge-@proposal.state.code">@Messages(proposal.state.code)</span> </h3>
                     </div>
-                    <div class="panel-body">
+                    <div class="card-body">
                         <a href="@routes.GoldenTicketController.showVotesForProposal(proposal.id)" class="btn btn-small btn-primary">@Messages("btn.showVotes")</a>
                         @helper.form(action = routes.GoldenTicketController.voteForProposal(proposal.id)) {
                             @if(maybeMyVote.isDefined && maybeMyVote.get.vote == 0) {
                                 <button name="vote" value="0" class="btn btn-sm btn-warning">Vote 0</button>
                             } else {
-                                <button name="vote" value="0" class="btn btn-sm btn-default">Vote 0</button>
+                                <button name="vote" value="0" class="btn btn-sm btn-primary">Vote 0</button>
                             }
                         }
                     </div>
                 </div>
             }else{
-            <div class="panel-heading">
-                <h3><i class="icon-thumbs-up"></i> @Messages("admin.sp.evaluate")</h3>
+            <div class="card-header">
+                <h3><i class="fas fa-thumbs-up"></i> @Messages("admin.sp.evaluate")</h3>
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 @if(proposal.state == ProposalState.SUBMITTED) {
                     @maybeMyVote.map { review: ReviewByGoldenTicket =>
-                        <i class="icon-trophy"></i> @Messages("admin.sp.voted") @tags.renderVote(review.vote)
+                        <i class="fas fa-trophy"></i> @Messages("admin.sp.voted") @tags.renderVote(review.vote)
                         - @review.date.toString("EEEE d MMM YYYY HH:mm")
 
                     <a href="@routes.GoldenTicketController.clearVoteForProposal(proposal.id)" class="btn btn-sm btn-danger">@Messages("admin.sp.deleteMyVote")</a>
@@ -158,7 +158,7 @@
                             @if(maybeMyVote.isDefined && maybeMyVote.get.vote==0){
                                 <button name="vote" value="0" class="btn btn-lg btn-warning">@Messages("Abs")</button>
                             }else{
-                                <button name="vote" value="0" class="btn btn-lg btn-default">@Messages("Abs")</button>
+                                <button name="vote" value="0" class="btn btn-lg btn-primary">@Messages("Abs")</button>
                             }
                             @for( i <- 1 to 10) {
                                 @maybeMyVote.map { review: ReviewByGoldenTicket =>

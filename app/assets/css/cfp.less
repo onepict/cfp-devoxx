@@ -111,6 +111,7 @@ dd.info {
   background-color: #fff;
   display: none;
   font-size: 13px;
+  z-index: 1;
 }
 
 .searching {
@@ -183,40 +184,148 @@ dd.info {
   vertical-align: bottom;
 }
 
-.label-submitted {
-  background-color: #8c32b6;
+.badge-submitted {
+  color: #fff;
+  background-color: #3498DB
 }
 
-.label-approved {
-  background-color: #f58c1a;
+a.badge-submitted:hover, a.badge-submitted:focus {
+  color: #fff;
+  background-color: #217dbb
 }
 
-.label-accepted {
-  background-color: #05b60e;
+a.badge-submitted:focus, a.badge-submitted.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.5)
 }
 
-.label-draft {
-  background-color: #336633;
+.badge-approved {
+  color: #fff;
+  background-color: #F39C12
 }
 
-.label-backup {
-  background-color: #3edd13;
+a.badge-approved:hover, a.badge-approved:focus {
+  color: #fff;
+  background-color: #c87f0a
 }
 
-.label-rejected {
-  background-color: #b63133;
+a.badge-approved:focus, a.badge-approved.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.5)
 }
 
-.label-refused {
-  background-color: #b63133;
+.badge-accepted {
+  color: #fff;
+  background-color: #18BC9C
 }
 
-.label-deleted {
-  background-color: #5f5652;
+a.badge-accepted:hover, a.badge-accepted:focus {
+  color: #fff;
+  background-color: #128f76
 }
 
-.label-declined {
-  background-color: #b61221;
+a.badge-accepted:focus, a.badge-accepted.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(24, 188, 156, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(24, 188, 156, 0.5)
+}
+
+.badge-draft {
+  color: #fff;
+  background-color: #2C3E50
+}
+
+a.badge-draft:hover, a.badge-draft:focus {
+  color: #fff;
+  background-color: #1a252f
+}
+
+a.badge-draft:focus, a.badge-draft.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(44, 62, 80, 0.5)
+}
+
+.badge-backup {
+  color: #fff;
+  background-color: #7b8a8b
+}
+
+a.badge-backup:hover, a.badge-backup:focus {
+  color: #fff;
+  background-color: #636f70
+}
+
+a.badge-backup:focus, a.badge-backup.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(123, 138, 139, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(123, 138, 139, 0.5)
+}
+
+.badge-rejected {
+  color: #fff;
+  background-color: #E74C3C
+}
+
+a.badge-rejected:hover, a.badge-rejected:focus {
+  color: #fff;
+  background-color: #d62c1a
+}
+
+a.badge-rejected:focus, a.badge-rejected.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.5)
+}
+
+.badge-refused {
+  color: #fff;
+  background-color: #E74C3C
+}
+
+a.badge-refused:hover, a.badge-refused:focus {
+  color: #fff;
+  background-color: #d62c1a
+}
+
+a.badge-refused:focus, a.badge-refused.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.5)
+}
+
+.badge-deleted {
+  color: #212529;
+  background-color: #ecf0f1
+}
+
+a.badge-deleted:hover, a.badge-deleted:focus {
+  color: #212529;
+  background-color: #cfd9db
+}
+
+a.badge-deleted:focus, a.badge-deleted.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(236, 240, 241, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(236, 240, 241, 0.5)
+}
+
+.badge-declined {
+  color: #fff;
+  background-color: #E74C3C
+}
+
+a.badge-declined:hover, a.badge-declined:focus {
+  color: #fff;
+  background-color: #d62c1a
+}
+
+a.badge-declined:focus, a.badge-declined.focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.5)
 }
 
 .sent {
@@ -539,61 +648,67 @@ progress:after {
   right: 0;
 }
 
-.btn-color-1{
+.btn-color-0, .score[data-score='0'] .displayed-score {
   color: #fff;
+  background-color: @lightgrey;
+  border-color: @lightgrey;
+}
+
+.btn-color-1, .score .minus, .score[data-score='1'] .displayed-score {
+ color: #fff;
  background-color: #e4151c;
  border-color: #e2061a;
 }
 
-.btn-color-2{
+.btn-color-2, .score[data-score='2'] .displayed-score {
   color: #fff;
  background-color: #ed4b24;
  border-color: #e93120;
 }
 
-.btn-color-3{
+.btn-color-3, .score[data-score='3'] .displayed-score {
  color: #fff;
  background-color: #ed882c;
  border-color: #ed6d29;
 }
 
-.btn-color-4{
+.btn-color-4, .score[data-score='4'] .displayed-score {
  color: #fff;
  background-color: #edc034;
  border-color: #eda931;
 }
 
-.btn-color-5{
+.btn-color-5, .score[data-score='5'] .displayed-score {
  color: #fff;
  background-color: #ede038;
  border-color: #edd637;
 }
 
-.btn-color-6{
+.btn-color-6, .score[data-score='6'] .displayed-score {
  color: #fff;
  background-color: #d0df36;
  border-color: #e1e237;
 }
 
-.btn-color-7{
+.btn-color-7, .score[data-score='7'] .displayed-score {
  color: #fff;
  background-color: #9cc630;
  border-color: #b4d333;
 }
 
-.btn-color-8{
+.btn-color-8, .score .plus, .score[data-score='8'] .displayed-score {
  color: #fff;
  background-color: #7cb22c;
  border-color: #63a229;
 }
 
-.btn-color-9{
+.btn-color-9, .score[data-score='9'] .displayed-score {
  color: #fff;
  background-color: #428b24;
  border-color: #2b7c21;
 }
 
-.btn-color-10{
+.btn-color-10, .score[data-score='10'] .displayed-score {
  color: #fff;
  background-color: #116a1d;
  border-color: #2b7c21;
@@ -605,6 +720,15 @@ progress:after {
   border-color:#000;
   border-style: solid;
   border-width: 2px;
+}
+
+.score {
+  &[data-score='0'] {
+    .minus, .displayed-score .regular-score { display: none; }
+  }
+  &:not([data-score='0']) .displayed-score .abs-score { display: none; }
+  &[data-score='10'] .plus { display: none; }
+  &[data-score-updated='false'] .refresh { display: none; }
 }
 
 .speakerOverview{
@@ -781,3 +905,62 @@ div.commentCfp{
   background-color: #f1b97a;
 }
 
+/***************************************************/
+/* Chat box in showProposal */
+/***************************************************/
+div.chat_list {
+  border-bottom: 1px solid #c4c4c4;
+  margin: 0;
+  padding: 18px 16px 10px;
+  background-color: #f6f6f6;
+}
+
+div.chat_people {
+  overflow: hidden;
+  clear: both;
+}
+
+div.chat_img {
+  float: left;
+  width: 11%;
+}
+
+div.chat_ib {
+  float: left;
+  padding: 0 0 0 15px;
+  width: 88%;
+
+  h5 {
+    font-size: 15px;
+    color: #464646;
+    margin: 0 0 8px 0;
+  }
+  .chat_date{
+        font-size: 13px;
+    float: right;
+  }
+  p{
+    font-size: 14px;
+    color: #383838;
+    margin: auto;
+  }
+}
+
+
+label{
+  margin-bottom: 0;
+  display: block;
+}
+.input{
+  padding-bottom: 5px;
+}
+
+p.searchProposalResult{
+  padding-left: 10px;
+  border-left: #1AACC7 2px solid;
+}
+
+p.searchSpeakerResult{
+  padding-left: 10px;
+  border-left: #f15f15 2px solid;
+}

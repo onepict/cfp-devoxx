@@ -2,7 +2,7 @@
 
 @import org.joda.time.DateTimeZone
 
-@views.html.Publisher.devoxxFR2017("My Schedule") {
+@views.html.Publisher.devoxxFR2020("My Schedule") {
     @if(timeSlots.isEmpty){
 
     <div class="columns large-12 woocommerce">
@@ -16,9 +16,9 @@
     <h2>@Messages("fav.day."+day)</h2>
     <div class="columns large-12 woocommerce">
         <table class="agendaTable">
-             @if(ConferenceDescriptor.isShowRoom) {
+             @if(ProgramSchedule.publishedProgramSchedule().map(_.showRooms).getOrElse(false)) {
                  <tr>
-                     <th><i class="icon-time"></i> Room</th>
+                     <th><i class="far fa-calendar-alt-check"></i> Room</th>
                      @rooms.sorted.map { roomName: Room =>
                          <td>@roomName.name</td>
                      }
@@ -28,11 +28,11 @@
             @slots.groupBy(s => s.from.getMillis).toList.sortWith(_._1 < _._1).map { case (_, subSlots) =>
             <tr >
                 <th class="timeSlot">
-                    @subSlots.head.from.toDateTime(DateTimeZone.forID("Europe/Brussels")).toString("HH:mm")
-                    - @subSlots.head.to.toDateTime(DateTimeZone.forID("Europe/Brussels")).toString("HH:mm")
+                    @subSlots.head.from.toDateTime(ConferenceDescriptor.current().timezone).toString("HH:mm")
+                    - @subSlots.head.to.toDateTime(ConferenceDescriptor.current().timezone).toString("HH:mm")
                 </th>
-                @rooms.sorted.map { room =>
-                    @tags.publisher.tagRenderRow(subSlots, room, rooms.size,showEndTime=true)
+                @rooms.sorted.zipWithIndex.map { case(room, index) =>
+                    @tags.publisher.tagRenderRow(subSlots, room, index, rooms.size, slots, showEndTime=true, None)
                 }
             </tr>
             }

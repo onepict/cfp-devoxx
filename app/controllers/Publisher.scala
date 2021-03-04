@@ -27,12 +27,10 @@ import akka.util.Crypt
 import library.search.ElasticSearch
 import play.api.libs.json.{JsObject, Json}
 import library.{LogURL, ZapActor}
-import models._
-import play.api.cache.Cache
-import play.api.data.Form
-import play.api.data.Forms._
-import play.api.data.validation.Constraints._
+import models.ConferenceDescriptor.ConferenceProposalTypes
+import models.{ConferenceDescriptor, _}
 import play.api.mvc._
+
 
 /**
  * Publisher is the controller responsible for the Web content of your conference Program.
@@ -132,92 +130,51 @@ object Publisher extends Controller {
   private val thursday: String = "thursday"
   private val friday: String = "friday"
 
-  def showAgendaByConfType(confType: String, slotId: Option[String], day: String = wednesday) = Action {
-    implicit request =>
-      val realSlotId = slotId.orElse {
-        ScheduleConfiguration.getPublishedSchedule(confType)
-      }
-      if (realSlotId.isEmpty) {
-        // Show the accepted talks instead
-        Ok(views.html.Publisher.showByTalkType(Proposal.allAcceptedByTalkType(confType), confType))
-      } else {
-        val maybeScheduledConfiguration = ScheduleConfiguration.loadScheduledConfiguration(realSlotId.get)
-        maybeScheduledConfiguration match {
-          case Some(slotConfig) if day == null =>
-            val updatedConf = slotConfig.copy(slots = slotConfig.slots)
-            Ok(views.html.Publisher.showAgendaByConfType(updatedConf, confType, wednesday))
-
-          case Some(slotConfig) if day == monday =>
-            val updatedConf = slotConfig.copy(slots = slotConfig.slots.filter(_.day == monday)
-              , timeSlots = slotConfig.timeSlots.filter(_.start.getDayOfWeek == 1))
-            Ok(views.html.Publisher.showAgendaByConfType(updatedConf, confType, monday))
-
-          case Some(slotConfig) if day == tuesday =>
-            val updatedConf = slotConfig.copy(
-              slots = slotConfig.slots.filter(_.day == tuesday)
-              , timeSlots = slotConfig.timeSlots.filter(_.start.getDayOfWeek == 2)
-            )
-            Ok(views.html.Publisher.showAgendaByConfType(updatedConf, confType, tuesday))
-
-          case Some(slotConfig) if day == wednesday =>
-            val updatedConf = slotConfig.copy(
-              slots = slotConfig.slots.filter(_.day == wednesday)
-              , timeSlots = slotConfig.timeSlots.filter(_.start.getDayOfWeek == 3)
-            )
-            Ok(views.html.Publisher.showAgendaByConfType(updatedConf, confType, wednesday))
-
-          case Some(slotConfig) if day == thursday =>
-            val updatedConf = slotConfig.copy(
-              slots = slotConfig.slots.filter(_.day == thursday)
-              , timeSlots = slotConfig.timeSlots.filter(_.start.getDayOfWeek == 4)
-            )
-            Ok(views.html.Publisher.showAgendaByConfType(updatedConf, confType, thursday))
-
-          case Some(slotConfig) if day == friday =>
-            val updatedConf = slotConfig.copy(
-              slots = slotConfig.slots.filter(_.day == friday)
-              , timeSlots = slotConfig.timeSlots.filter(_.start.getDayOfWeek == 5)
-            )
-            Ok(views.html.Publisher.showAgendaByConfType(updatedConf, confType, friday))
-
-          case None => Ok(views.html.Publisher.showByTalkType(Proposal.allAcceptedByTalkType(confType), confType))
-            // NotFound(views.html.Publisher.agendaNotYetPublished())
-        }
-      }
-  }
-
-  def showByDay(day: String) = Action {
+  def showByDay(day: String, secretPublishKey: Option[String], hideUselessRooms: Boolean = true, includeTypes: Option[String], excludeTypes: Option[String] = Some("bof")) = Action {
     implicit request =>
 
-      def _showDay(slots: List[Slot], day: String) = {
-        val rooms = slots.groupBy(_.room).keys.toList
-        val allSlots = ScheduleConfiguration.getPublishedScheduleByDay(day)
-        Ok(views.html.Publisher.showOneDay(allSlots, rooms, day))
+      val maybeProgramSchedule = ProgramSchedule.findByPublishKey(secretPublishKey)
+      def _showDay(day: String) = {
+        val allSlots = Slot.fillWithFillers(ScheduleConfiguration.getPublishedScheduleByDay(day, secretPublishKey))
+        val allSlotsWithBofMaybeFiltered = allSlots.filter(s => {
+          (includeTypes.isEmpty || includeTypes.get.split(",").contains(s.name)) && (excludeTypes.isEmpty || !excludeTypes.get.split(",").contains(s.name))
+        })
+        val rooms = allSlotsWithBofMaybeFiltered.groupBy(_.room).filter { entry =>
+          val result = !hideUselessRooms || entry._2.count(_.proposal.isDefined) > 0
+          result
+        }.keys.toList
+        Ok(views.html.Publisher.showOneDay(allSlotsWithBofMaybeFiltered, rooms, day, maybeProgramSchedule, secretPublishKey, hideUselessRooms, includeTypes, excludeTypes))
       }
 
-      day match {
-        case d if Set("mon", monday, "lundi").contains(d) => _showDay(models.ConferenceDescriptor.ConferenceSlots.mondaySchedule, monday)
-        case d if Set("tue", tuesday, "mardi").contains(d) => _showDay(models.ConferenceDescriptor.ConferenceSlots.tuesdaySchedule, tuesday)
-        case d if Set("wed", wednesday, "mercredi").contains(d) => _showDay(models.ConferenceDescriptor.ConferenceSlots.wednesdaySchedule, wednesday)
-        case d if Set("thu", thursday, "jeudi").contains(d) => _showDay(models.ConferenceDescriptor.ConferenceSlots.thursdaySchedule, thursday)
-        case d if Set("fri", friday, "vendredi").contains(d) => _showDay(models.ConferenceDescriptor.ConferenceSlots.fridaySchedule, friday)
+      (maybeProgramSchedule.map(_.showSchedule).getOrElse(false), day) match {
+        case (false, _) => NotFound("Schedule not published yet")
+        case (true, d) if Set("mon", monday, "lundi").contains(d) => _showDay(monday)
+        case (true, d) if Set("tue", tuesday, "mardi").contains(d) => _showDay(tuesday)
+        case (true, d) if Set("wed", wednesday, "mercredi").contains(d) => _showDay(wednesday)
+        case (true, d) if Set("thu", thursday, "jeudi").contains(d) => _showDay(thursday)
+        case (true, d) if Set("fri", friday, "vendredi").contains(d) => _showDay(friday)
         case _ => NotFound("Day not found")
       }
   }
 
 
-  def showDetailsForProposal(proposalId: String, proposalTitle: String) =
+  def showDetailsForProposal(proposalId: String, proposalTitle: String, secretPublishKey: Option[String]=None) =
     Action {
     implicit request =>
       Proposal.findById(proposalId) match {
         case None => NotFound("Proposal not found")
         case Some(proposal) =>
-          val publishedConfiguration = ScheduleConfiguration.getPublishedSchedule(proposal.talkType.id)
-          val maybeSlot = ScheduleConfiguration.findSlotForConfType(proposal.talkType.id, proposal.id)
+          if(proposal.state == ProposalState.ACCEPTED) {
+            val maybeProgramSchedule = ProgramSchedule.findByPublishKey(secretPublishKey)
+            val publishedConfiguration = ScheduleConfiguration.getPublishedScheduleSlotConfigurationId(proposal.talkType.id, secretPublishKey)
+            val maybeSlot = ScheduleConfiguration.findSlotForConfType(proposal.talkType.id, proposal.id)
 
-          ZapActor.actor ! LogURL("showTalk", proposalId, proposalTitle)
+            ZapActor.actor ! LogURL("showTalk", proposalId, proposalTitle)
 
-          Ok(views.html.Publisher.showProposal(proposal, publishedConfiguration, maybeSlot))
+            Ok(views.html.Publisher.showProposal(proposal, publishedConfiguration, maybeSlot, maybeProgramSchedule))
+          } else {
+            NotFound("Proposal not found")
+          }
       }
   }
 
@@ -229,14 +186,12 @@ object Publisher extends Controller {
       ElasticSearch.doPublisherSearch(q, p).map {
         case r if r.isSuccess =>
           val json = Json.parse(r.get)
-          val total = (json \ "hits" \ "total").as[Int]
+          val total = (json \ "hits" \ "total" \ "value").as[Int]
           val hitContents = (json \ "hits" \ "hits").as[List[JsObject]]
 
           val results = hitContents.map {
             jsvalue =>
-              val index = (jsvalue \ "_index").as[String]
               val source = jsvalue \ "_source"
-              val id = (source \ "id").as[String]
               val proposal = source.as[Proposal]
               proposal
           }

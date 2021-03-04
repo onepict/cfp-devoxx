@@ -42,6 +42,8 @@ import play.api.libs.ws.WSAuthScheme.BASIC
  */
 object ElasticSearch {
 
+  val indexNames:String = "speakers,proposals"
+
   val host = Play.current.configuration.getString("elasticsearch.host").getOrElse("http://localhost:9200")
   val username = Play.current.configuration.getString("elasticsearch.username").getOrElse("")
   val password = Play.current.configuration.getString("elasticsearch.password").getOrElse("")
@@ -63,25 +65,26 @@ object ElasticSearch {
     }
   }
 
-  def indexBulk(json: String, indexName: String) = {
+  def indexBulk(indexName: String, json: String) = {
     if (play.Logger.of("library.ElasticSearch").isDebugEnabled) {
-      play.Logger.of("library.ElasticSearch").debug(s"Bulk index $indexName started to $host")
+      play.Logger.of("library.ElasticSearch").debug(s"Bulk index $indexName started")
     }
 
     val futureResponse = WS.url(s"$host/$indexName/_bulk")
       .withAuth(username, password,BASIC)
+      .withHeaders("Content-Type"-> "application/x-ndjson")
       .post(json)
     futureResponse.map {
       response =>
         response.status match {
           case 201 =>
             if (play.Logger.of("library.ElasticSearch").isDebugEnabled) {
-              play.Logger.of("library.ElasticSearch").debug(s"Bulk index [$indexName] created")
+              play.Logger.of("library.ElasticSearch").debug(s"Bulk index [$indexName] done")
             }
             Success(response.body)
           case 200 =>
             if (play.Logger.of("library.ElasticSearch").isDebugEnabled) {
-              play.Logger.of("library.ElasticSearch").debug(s"Bulk index [$indexName] created")
+              play.Logger.of("library.ElasticSearch").debug(s"Bulk index [$indexName] done")
             }
             Success(response.body)
           case other => Failure(new RuntimeException(s"Unable to bulk import [$indexName], HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
@@ -91,12 +94,13 @@ object ElasticSearch {
 
   def createIndexWithSettings(index: String, settings: String) = {
     if (play.Logger.of("library.ElasticSearch").isDebugEnabled) {
-      play.Logger.of("library.ElasticSearch") debug s"Create index $index with settings $settings"
+      play.Logger.of("library.ElasticSearch") debug s"Create index $index with custom settings"
     }
     val url = s"$host/${index.toLowerCase}"
     val futureResponse = WS.url(url)
       .withAuth(username, password,BASIC)
-      .post(settings)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
+      .put(settings)
     futureResponse.map {
       response =>
         response.status match {
@@ -110,7 +114,7 @@ object ElasticSearch {
               play.Logger.of("library.ElasticSearch") debug s"Created index $index"
             }
             Success(response.body)
-          case other =>
+          case _ =>
             play.Logger.of("library.ElasticSearch").warn("Unable to create index with settings due to " + response.body)
             Failure(new RuntimeException("Unable to createSettings, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
@@ -123,13 +127,14 @@ object ElasticSearch {
     val futureResponse = WS.url(url)
       .withAuth(username, password,BASIC)
       .withRequestTimeout(6000)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
       .put(mapping)
     futureResponse.map {
       response =>
         response.status match {
           case 201 => Success(response.body)
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException(s"Unable to createMapping for $index, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException(s"Unable to createMapping for $index, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -140,13 +145,14 @@ object ElasticSearch {
     val futureResponse = WS.url(url)
       .withRequestTimeout(6000)
       .withAuth(username, password,BASIC)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
       .post("{}")
     futureResponse.map {
       response =>
         response.status match {
           case 201 => Success(response.body)
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to createMapping, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to createMapping, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -163,10 +169,9 @@ object ElasticSearch {
         response.status match {
           case 201 => Success(response.body)
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to delete index, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to delete index, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
-
   }
 
   def doSearch(query: String): Future[Try[String]] = {
@@ -178,7 +183,7 @@ object ElasticSearch {
       response =>
         response.status match {
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to search, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to search, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -215,12 +220,13 @@ object ElasticSearch {
       .withFollowRedirects(true)
       .withRequestTimeout(4000)
       .withAuth(username, password,BASIC)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
       .post(json)
     futureResponse.map {
       response =>
         response.status match {
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to perform search, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to perform search, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -270,12 +276,13 @@ object ElasticSearch {
       .withFollowRedirects(true)
       .withRequestTimeout(4000)
       .withAuth(username, password,BASIC)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
       .post(json)
     futureResponse.map {
       response =>
         response.status match {
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to perform search, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to perform search, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -329,13 +336,14 @@ object ElasticSearch {
 
     val futureResponse = WS.url(host + "/" + index + "/_search?search_type=count")
       .withAuth(username, password,BASIC)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
       .post(json)
     futureResponse.map {
       response =>
         response.status match {
           case 201 => Success(response.body)
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to load tag, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to load tag, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -432,12 +440,14 @@ object ElasticSearch {
       play.Logger.of("ElasticSearch").debug(json)
     }
 
-    val futureResponse = WS.url(host + "/" + index + "/_search").withRequestTimeout(4000).post(json)
+    val futureResponse = WS.url(host + "/" + index + "/_search")
+      .withHeaders("Content-Type" -> "application/x-ndjson")
+      .withRequestTimeout(4000).post(json)
     futureResponse.map {
       response =>
         response.status match {
           case 200 => Success(response.body)
-          case other => Failure(new RuntimeException("Unable to index, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
+          case _ => Failure(new RuntimeException("Unable to index, HTTP Code " + response.status + ", ElasticSearch responded " + response.body))
         }
     }
   }
@@ -483,6 +493,7 @@ object ElasticSearch {
       .withFollowRedirects(true)
       .withRequestTimeout(4000)
       .withAuth(username, password,BASIC)
+      .withHeaders("Content-Type" -> "application/x-ndjson")
       .post(json)
     futureResponse.map {
       response =>

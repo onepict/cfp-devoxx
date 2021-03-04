@@ -1,19 +1,19 @@
 # -----------------
 # Main conference details
-CONF.title=Devoxx France 2019
+CONF.title=Devoxx France 2020
 CONF.subtitle=FR
 
 # Equivalent to ConferenceNaming
-shortYearlyName=Devoxx FR 2019
-longYearlyName=Devoxx France 2019
+shortYearlyName=Devoxx FR 2020
+longYearlyName=Devoxx France 2020
 shortName=Devoxx France
-longName=Devoxx FR 2019 CFP
+longName=Devoxx FR 2020 CFP
 longSplittedName_whiteStart=Devox
 longSplittedName_colored=x
-longSplittedName_whiteEnd=FR 2019
-conference.dates=17th to 19th April
+longSplittedName_whiteEnd=FR 2020
+conference.dates=15h to 17th April
 # -----------------
-cfp.title=Devoxx FR 2019 CFP
+cfp.title=Devoxx FR 2020 CFP
 login.error=Invalid email or password
 menu.home=Home
 menu.register=Sign-in
@@ -96,8 +96,9 @@ title.help=Think carefully and try to create a title that is descriptive enough.
 summary=Summary of your presentation, for the attendee
 summary.help=Describe your proposal as it will appear on our website and mobile apps. You can use Markdown syntax.
 lang=Main language
-phoneNumber=cell phone number
-lang.help=25% of talks at Devoxx FR are in English, the others are in French. If you speak French, please do present in French. If you are not sure, ask the question in the 'Message for program committee' textarea.
+phoneNumber=cell phone number (for emergency use only)
+lang.help=25% of talks at Devoxx FR are in English, the others are in French. If you are not sure, ask the question in the 'Message for program committee' textarea.
+lang.important=If you speak French, please do present in French. 
 track.help=Tracks are the main topics of the conference.
 
 mainSpeaker=Main speaker
@@ -115,14 +116,15 @@ demoLevel.help=
 title.maxLength=125 char max.
 
 
-privateMessage=Message for the program committee, motivation for your presentation
-privateMessage.help=Write here any important details about your presentation, that the program committee should know. You can also set here the URL to your slides, or a link to an existing online talk for example on Parleys.com.
+privateMessage=Message for the program committee
+privateMessage.help=Write here any important details about your presentation, that the program committee should know. You can also set here the URL to your slides, or a link to an existing online talk.
+privateMessage.help.important=If you have any doubt about your proposal, don't hesitate to tell us and we will help you to improve it.
 sponsorTalk=Is this a sponsor presentation?
 videoLinkMessage=Related video link
-videoLinkMessage.help=Share with the program committee a link to one of your related online videos on YouTube or Vimeo
+videoLinkMessage.help=Share with the program committee a link to one of your related online videos. Use the full URL on YouTube or other.
 sponsorTalk.help.title=Sponsor talk
-sponsor.name.plz=Please, specify your company/exhibitor name in the private message textarea. This is valid for Silver and Platinum only.
-sponsorTalk.help=Platinum and Gold sponsors at Devoxx France can submit one Conference talk, that is automatically accepted and scheduled. Do not tick this checkbox if your company is an exhibitor, and you just want to submit a normal proposal.
+sponsor.name.plz=Please, specify your company/exhibitor name in the private message textarea.
+sponsorTalk.help=Diamond and Platinum sponsors at Devoxx France can submit one Conference talk, that is automatically accepted and scheduled. Do not tick this checkbox if your company is an exhibitor, and you just want to submit a normal proposal.
 sponsorTalk.checkbox=Yes, this is a sponsor/exhibitor talk
 
 helpAndTips=More info
@@ -141,7 +143,7 @@ preview.warn2=in the main CFP screen.
 next.action=Select next action:
 
 # Proposal type
-key.label=Keynote, 20mn, Thursday and Friday
+key.label=Keynote, 20mn, Thursday and Friday - ⛔️ Only on invitation.
 key.label.simple=Keynote
 conf.label=Conference, 45mn, Thursday and Friday
 conf.label.simple=Conference
@@ -155,12 +157,8 @@ bof.label=Bird of a Feather, 1h, Thursday evening only
 bof.label.simple=Bird of a Feather
 lab.label=Hands-on Labs, 3h, Wednesday, Thursday and Friday
 lab.label.simple=Hands-on Lab
-other.label=Other event
+other.label=Other event - ⛔️ Only on invitation.
 other.label.simple=Other
-start.label=Startup Talk, 25 min, Wednesday to Friday
-start.label.simple=Startup
-ignite.label=Ignite Sessions, 5 min, Wednesday to Thursday early afternoon
-ignite.label.simple=Ignite
 
 hack.label.simple=Hackatons
 code.label.simple=Codestory
@@ -180,17 +178,17 @@ cfp.program.date=from {0}
 video.title=Videos
 video.tag=Review Devoxx FR''s videos on
 theme.title=Tracks
-theme.track=List of tracks for Devoxx France 2019:
+theme.track=List of tracks for Devoxx France 2020:
 track.title=Title
 track.description=Description
-appel.conf.dates=Devoxx France 2019, 17th-19th April
+appel.conf.dates=Devoxx France 2020, 15th-17th April
 
 # Tracks
 
-track.java.title=Java, JVM, Javas SE/EE
-track.java.desc=Everything around Java, the JVM, Java SE, Java EE.
-java.label=Java, JVM, Javas SE/EE
-java.leaderboard=Java, JVM, Javas SE/EE
+track.java.title=Java, JVM
+track.java.desc=Everything around Java and the JVM.
+java.label=Java, JVM
+java.leaderboard=Java, JVM
 
 track.mobile.title=Mobile, Internet of Things, Augmented Reality, ...
 track.mobile.desc=Mobile, Internet of Things, Augmented Reality, ...
@@ -266,6 +264,7 @@ table.pres.action=Actions
 table.pres.doSubmit=Submit
 table.pres.doDelete=Delete
 
+proposal.limit=As a speaker you can propose a maximum of {0} proposals amongst types: {1}
 proposal.draft.reminder=Do not forget to submit your talk
 
 total.draft={0} proposals
@@ -302,6 +301,7 @@ freepass=Yes
 no.freepass=No
 speakers.updated=Speakers''s list updated
 noOther.speaker=---- No other speaker ----
+proposal.noOtherSpeakers=Your proposal type doesn't allow to add another speaker.
 
 # CFPadmin
 msgSpeaker=Your message
@@ -381,7 +381,7 @@ admin.draft.warning3=Current proposal state :
 
 newProposal.maxLength=Max size is 1200 characters (including Markdown characters, if you want to use it)
 preview.txt=Preview Conference guide (sample page)
-tags.renderComment.postedBy=Posted by {0} on {1} at {2}
+tags.renderComment.postedBy=Posted on {0} at {1}
 
 admin.btn.sponsor=VIP view on proposals
 leaderboard.compute=Computing stats
@@ -457,9 +457,6 @@ hack=Hackaton
 key=Keynote
 other=Other format
 all=All
-start=Startup presentation
-ignite=Ignite Sessions
-amd=Après-midi des Décideurs
 
 sw.proposal.speaker=Presented by
 admin.btn.changeState=Change one proposal state
@@ -472,8 +469,6 @@ sw.all.conf=All Conferences
 sw.all.lab=All Hands-on labs
 sw.all.quick=All Quickies
 sw.all.bof=All BOFs
-sw.all.start=All Startup''s talks
-sw.all.ignite=All Ignite Sessions
 sw.all.tia=All Tools in Action
 sw.speakers=Devoxxians
 sw.intro=The agenda is published every day.
@@ -516,11 +511,11 @@ day-confThursday=Thursday
 day-lab=Wednesday
 day-confFriday=Friday
 day-bof=Thursday, 19h30
-day-monday=Monday, 3th April
-day-tuesday=Tuesday, 4th April
-day-wednesday=Wednesday, 17th April
-day-thursday=Thursday, 18th April
-day-friday=Friday, 19th April
+day-monday=Monday, 13th April
+day-tuesday=Tuesday, 14th April
+day-wednesday=Wednesday, 15th April
+day-thursday=Thursday, 16th April
+day-friday=Friday, 17th April
 
 sw.all.confThursday=Conferences on Thursday
 confThursday=Conferences on Thursday
@@ -549,11 +544,11 @@ sw.show.thu=Thursday
 sw.show.thursday=Thursday
 sw.show.fri=Friday
 sw.show.friday=Friday
-sw.show.title.mon=Monday, 15th April 2019
-sw.show.title.tue=Tuesday, 16th April 2019
-sw.show.title.wed=Wednesday, 17th April 2019
-sw.show.title.thu=Thursday, 18th April 2019
-sw.show.title.fri=Friday, 19th April 2019
+sw.show.title.mon=Monday, 13th April 2020
+sw.show.title.tue=Tuesday, 14th April 2020
+sw.show.title.wed=Wednesday, 15th April 2020
+sw.show.title.thu=Thursday, 16th April 2020
+sw.show.title.fri=Friday, 17th April 2020
 
 sw.details.wednesday=Wednesday
 sw.details.thursday=Thursday
@@ -571,7 +566,7 @@ not.published=The agenda for this conference is not yet published
 sw.reg=Registration and Breakfast
 sw.dej=Registration and Breakfast
 sw.coffee=Coffee break
-sw.chgt=Coffee break
+sw.chgt=Short break
 sw.def=Coffee
 day-wed=Wednesday
 day-thu=Thursday
@@ -656,6 +651,7 @@ wishList.newWishList=Create new Wishlist
 
 contacted=Speaker has been contacted
 unknown=Unknown
+unknown.label=Unknown
 
 # The abstention button
 Abs=Abs
@@ -696,7 +692,7 @@ email_pub2=Please confirm your email
 
 cfp.closed=CFP is currently closed.
 cfp.closing.date=pensez à accepter ou décliner les sujets approuvés par le comité.
-cfp.opening.date=Lundi 2 décembre 2013
+cfp.opening.date=Lundi 2 décembre 2019
 constraint.email=Valid email address
 constraint.max=Max value : {0}
 constraint.maxLength=Max length: {0}
@@ -735,7 +731,7 @@ wl_keynote=Keynote
 wl_keynote.checkbox=Yes, this could be a keynote speaker
 
 showProposal.comment.ar=Ask a question about this talk to the team
-ar.proposalType=Proposal type:
+ar.proposalType=Proposal type
 ar.proposalId=Proposal ID:
 
 tag.proposal.title=Title
@@ -805,7 +801,7 @@ gt.todo=Your todo list size:
 
 gt.yourVotes=Your votes
 gt.personnal=Your personnal leaderboard
-gt.youReviewed=You reviewed {0} talk(s)
+gt.youReviewed=Out of {0} talks, you have reviewed {1} talks and {2} reviews remain.
 gt.youVoted=You have voted for {0} talk(s)
 gt.averageVote=Your average vote is {0}
 gt.noVotes=You haven''t vote for any proposal so far.
@@ -816,9 +812,11 @@ gt.home=Go back to home
 gt.vote.ok=Your vote has been recorded.
 gt.youcan=You can now:
 gt.nomore=There is no more talk to review, congratulation you did it!
-gt.nextTalk=Continue and evaluate next talk
-gt.nextTalkType=Continue and evaluate another {0}
-gt.nextTalkTrack=Continue and evaluate next talk for track {0}
+gt.nextTalkTrackAndType=Continue and evaluate another [{0}] for track [{1}]
+gt.nextTalkType=Continue and evaluate another [{0}]
+gt.nextTalkDifferentType=Continue and evaluate next talk of different type : [{0}]
+gt.nextTalkTrack=Continue and evaluate next talk for track [{0}]
+gt.nextTalkDifferentTrack=Continue and evaluate next talk of different track : [{0}]
 
 gtAdmin.totalGT=Total number of person with a Golden Ticket: {0}
 gtAdmin.top5=Top 5 by score
@@ -905,7 +903,7 @@ wl_travel=Travel & hotel
 wl_travel.checkbox=Yes, cover travel expenses
 wl_unknown=Unknown
 
-cfp.filter.on=Filter on :
+cfp.filter.on=Filter on
 cfp.filter.off=Remove filter
 
 cfpadmin.totalReviewed={0} reviewed
@@ -948,9 +946,14 @@ invalid.phone.txt=Invalid phone number or permission to send an SMS has not been
 
 admin.btn.devoxxians=All Devoxxians
 
-cfp.maxProposals.reached=Warning, you cannot submit more than {0} proposals. We had to limit the number of submission.
+cfp.maxProposals.reached=Your proposal wasn''t submitted. As a speaker you can propose a maximum of {0} proposals amongst types: {1}
 cfp.member=CFP Member
 
 golden.welcome.txt=Welcome to the Golden Ticket private section. Buy a Golden Ticket on {0} web site, and get access to proposals! Be part of the team that review and select talks for {0}.
 
 publisher.proposal.roomHidden=Room name is available few days before the conference.
+
+your.reviewer.rank=Your rank
+reviewed=reviewed proposals
+no.more.talk=You reviewed all submitted proposals
+

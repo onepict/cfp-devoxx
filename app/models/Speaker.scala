@@ -29,7 +29,6 @@ import org.apache.commons.lang3.StringUtils
 import org.joda.time.{DateTime, Instant}
 import play.api.i18n.Lang
 import play.api.libs.json.Json
-import play.api.templates.HtmlFormat
 
 /**
   * Speaker profile, is used mainly to show details.
@@ -65,8 +64,15 @@ case class Speaker(uuid: String
     firstName.getOrElse("").capitalize
   }
 
-  def cleanLastName: String = {
-    name.map(s=> s.toLowerCase.replaceAll("é","e")).getOrElse("").toUpperCase
+  def cleanLastName: String = { cleanLastName() }
+  def cleanLastName(removeAccents: Boolean = true): String = {
+    name.map(s => {
+      var result = s.toLowerCase
+      if(removeAccents) {
+        result = result.replaceAll("é","e")
+      }
+      result
+    }).getOrElse("").toUpperCase
   }
 
   def urlName: String = {
@@ -154,7 +160,7 @@ object Speaker {
     Some(Option(s.uuid), s.email, s.name.getOrElse(""), s.bio, s.lang, s.twitter, s.avatarUrl, s.company, s.blog, s.firstName.getOrElse(""), !needsToAccept(s.uuid), s.qualifications.getOrElse("No experience"))
   }
 
-  def save(speaker: Speaker) = Redis.pool.withClient {
+  def save(speaker: Speaker): Long = Redis.pool.withClient {
     client =>
       val jsonSpeaker = Json.stringify(Json.toJson(speaker))
       client.hset("Speaker", speaker.uuid, jsonSpeaker)
